@@ -6,8 +6,20 @@
  */
 import type { LocationStatus, StorageLocation } from '../domain/types';
 
+/** Tipo de carga, para representarla visualmente. */
+export type LoadType = 'carton' | 'pallet-plastico' | 'klt' | 'cajon-verde' | 'film';
+
+export const LOAD_TYPE_LABEL: Record<LoadType, string> = {
+  carton: 'Cajas en pallet de madera',
+  'pallet-plastico': 'Cajas en pallet plástico',
+  klt: 'Cajas plásticas (KLT)',
+  'cajon-verde': 'Cajón plástico verde',
+  film: 'Pallet con film',
+};
+
 export interface LocationInfo {
   status: LocationStatus;
+  loadType?: LoadType;
   sku?: string;
   description?: string;
   quantity?: number;
@@ -72,8 +84,21 @@ export function getLocationInfo(location: StorageLocation): LocationInfo {
     const p = PRODUCTS[Math.floor(rnd() * PRODUCTS.length)];
     const exp = new Date(BASE_DATE);
     exp.setMonth(exp.getMonth() + 2 + Math.floor(rnd() * 22));
+    const lt = rnd();
+    // Los cajones verdes solo se apoyan en el piso (nivel 1), como en el depósito real.
+    const loadType: LoadType =
+      location.level === 1 && lt < 0.3
+        ? 'cajon-verde'
+        : lt < 0.45
+          ? 'carton'
+          : lt < 0.65
+            ? 'pallet-plastico'
+            : lt < 0.82
+              ? 'klt'
+              : 'film';
     info = {
       status,
+      loadType,
       sku: p.sku,
       description: p.description,
       unit: p.unit,

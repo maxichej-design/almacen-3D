@@ -19,9 +19,11 @@ export interface RackDimensions {
 }
 
 export interface AisleConfig {
-  /** Identificador corto, p. ej. "P1". */
+  /** Identificador corto, p. ej. "P1". Forma parte del código de ubicación. */
   id: string;
   name: string;
+  /** Letra del cartel pintado en la pared al final del pasillo. */
+  sign: string;
 }
 
 export interface WarehouseLayout {
@@ -42,21 +44,21 @@ export interface WarehouseLayout {
 
 export const warehouseLayout: WarehouseLayout = {
   aisles: [
-    { id: 'P1', name: 'Pasillo 1' },
-    { id: 'P2', name: 'Pasillo 2' },
+    { id: 'P1', name: 'Pasillo 1', sign: 'A' },
+    { id: 'P2', name: 'Pasillo 2', sign: 'B' },
   ],
-  baysPerRow: 10,
-  levels: 4,
-  aisleWidth: 3.4,
+  baysPerRow: 12,
+  levels: 6,
+  aisleWidth: 3.0, // pasillo para autoelevador retráctil
   backToBackGap: 0.3,
   rack: {
     bayWidth: 2.7,
     depth: 1.1,
-    levelHeight: 1.6,
+    levelHeight: 1.35,
     firstLevelHeight: 0,
     uprightSize: 0.09,
     beamHeight: 0.12,
   },
   floorMargin: 6,
-  wallHeight: 9,
+  wallHeight: 11,
 };

@@ -20,7 +20,7 @@ export function WarehouseScene() {
       <color attach="background" args={['#e2e8f0']} />
       <fog attach="fog" args={['#e2e8f0', span * 1.6, span * 4]} />
 
-      <hemisphereLight args={['#ffffff', '#8b8f96', 0.9]} />
+      <hemisphereLight args={['#ffffff', '#9ca3af', 1.25]} />
       <directionalLight
         position={[span * 0.4, span * 0.8, span * 0.3]}
         intensity={1.6}

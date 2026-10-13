@@ -38,6 +38,7 @@ export interface Rack {
 export interface Aisle {
   id: string;
   name: string;
+  sign: string;
   /** Centro del pasillo en Z. */
   centerZ: number;
   width: number;

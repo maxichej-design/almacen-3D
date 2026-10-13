@@ -1,4 +1,4 @@
-import { getLocationInfo, STATUS_META } from '../data/mockInventory';
+import { getLocationInfo, LOAD_TYPE_LABEL, STATUS_META } from '../data/mockInventory';
 import type { Rack, StorageLocation } from '../domain/types';
 import { useWarehouse } from '../state/WarehouseContext';
 
@@ -66,6 +66,7 @@ function LocationDetails({ location }: { location: StorageLocation }) {
           <dl className="grid">
             <dt>Artículo</dt><dd>{info.sku}</dd>
             <dt>Descripción</dt><dd>{info.description}</dd>
+            {info.loadType && (<><dt>Tipo de carga</dt><dd>{LOAD_TYPE_LABEL[info.loadType]}</dd></>)}
             <dt>Cantidad</dt><dd>{info.quantity} {info.unit}</dd>
             <dt>Lote</dt><dd>{info.lot}</dd>
             <dt>Vencimiento</dt><dd>{info.expiry}</dd>

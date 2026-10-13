@@ -102,6 +102,14 @@ export function RackModel({ rack }: { rack: Rack }) {
         )}
       </group>
 
+      {/* Protectores rojos al pie de las cabeceras */}
+      {[ox - 0.08, ox + length + 0.08].map((x) => (
+        <mesh key={`g${x}`} position={[x, 0.2, oz + dim.depth / 2]} castShadow raycast={() => null}>
+          <boxGeometry args={[0.1, 0.4, dim.depth + 0.12]} />
+          <meshStandardMaterial color={SCENE_COLORS.guard} roughness={0.5} />
+        </mesh>
+      ))}
+
       {/* Carteles: número de módulo arriba y nivel en el primer parante */}
       {Array.from({ length: rack.bays }, (_, i) => (
         <Label

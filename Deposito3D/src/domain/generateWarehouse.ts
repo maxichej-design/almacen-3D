@@ -38,7 +38,7 @@ export function generateWarehouse(layout: WarehouseLayout): WarehouseModel {
     z += dim.depth;
     if (i < layout.aisles.length - 1) z += layout.backToBackGap;
 
-    aisles.push({ id: aisleCfg.id, name: aisleCfg.name, centerZ, width: layout.aisleWidth });
+    aisles.push({ id: aisleCfg.id, name: aisleCfg.name, sign: aisleCfg.sign, centerZ, width: layout.aisleWidth });
 
     const rows: Array<{ side: AisleSide; z: number; facing: 1 | -1 }> = [
       { side: 'I', z: leftZ, facing: 1 },
