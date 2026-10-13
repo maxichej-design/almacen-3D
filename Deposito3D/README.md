@@ -24,6 +24,11 @@ funciona sin conexión a internet (no descarga fuentes ni texturas).
 
 ## Cómo ejecutarlo
 
+**En Windows, lo más simple:** doble clic en `INICIAR.bat`. La primera vez instala
+las dependencias; después abre el navegador en el depósito 3D.
+
+**Desde una terminal:**
+
 ```bash
 cd Deposito3D
 npm install      # solo la primera vez
