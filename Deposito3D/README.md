@@ -22,7 +22,13 @@ funciona sin conexión a internet (no descarga fuentes ni texturas).
 
 - Node.js 20 o superior (probado con Node 22)
 
-## Cómo ejecutarlo
+## Versión sin instalar nada (un solo archivo)
+
+`npm run build:standalone` genera **`Deposito3D.html`**: un único archivo que se abre
+con doble clic en Chrome o Edge, sin Node.js ni servidor. Sirve para mostrar el
+prototipo en cualquier PC. No se actualiza solo: hay que generarlo de nuevo con cada cambio.
+
+## Cómo ejecutarlo (modo desarrollo)
 
 **En Windows, lo más simple:** doble clic en `INICIAR.bat`. La primera vez instala
 las dependencias; después abre el navegador en el depósito 3D.
