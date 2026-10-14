@@ -1,99 +1,75 @@
 # Deposito3D
 
-Prototipo de aplicación web para representar y gestionar visualmente un depósito
-industrial con un modelo 3D interactivo.
+Gemelo digital del almacén: el stock visto en 3D, ubicación por ubicación, para que
+**inventario** tenga un control más fino (FIFO, conteo cíclico, obsoletos, ocupación).
 
-> **Etapa 1 – prototipo visual.** Los datos de inventario son ficticios. No hay todavía
-> importación de Excel, base de datos, movimientos de stock ni integración con la fábrica.
+> Prototipo. Mientras no se cargue un reporte real, los datos son **de demostración**.
+> El layout (filas, módulos, niveles, zonas) es tentativo hasta tener el plano de ingeniería.
 
-## Tecnologías
+## Qué hace
 
-| Pieza | Para qué |
-|---|---|
-| [Vite](https://vite.dev) | Servidor de desarrollo con recarga automática (HMR) y build |
-| React + TypeScript | Interfaz y tipado para que el proyecto crezca ordenado |
-| Three.js + [React Three Fiber](https://r3f.docs.pmnd.rs) | Render 3D declarativo con componentes React |
-| [@react-three/drei](https://drei.docs.pmnd.rs) | Utilidades 3D (controles de cámara, bordes de selección) |
+- **Depósito 3D** con filas por letra (A–H), módulos y niveles. Códigos de ubicación tipo `C5.1`
+  (fila C, módulo 5, nivel 1 = piso). Zonas de piso: Recepción, **W0WIP** (armado), Expedición, F1, L1, Q1.
+- **Buscador único:** ubicación (`C5.1`), fila (`C`), zona (`W0WIP`) o número de parte / descripción.
+- **Ir caminando:** la cámara entra por la cabecera del pasillo y camina hasta la ubicación.
+- **Recorrer:** modo primera persona (W A S D / flechas, arrastrar para mirar, botones en pantalla).
+- **FIFO:** al buscar una pieza se marcan todas sus ubicaciones numeradas por antigüedad (FIFO 1 = sale primero).
+- **Ver por:** realista · clase ABC · antigüedad del stock · estado de conteo cíclico.
+- **Conteo cíclico:** frecuencia por clase (A 60 d, B 90 d, C 120 d; D = obsoleta, se revisa para baja),
+  lista de vencidos / por vencer, **planilla CSV** para salir a contar y registro del conteo.
+- **Tablero:** ocupación, clasificación ABC, antigüedad, conteos, stock más antiguo, ubicaciones del reporte que no existen en el layout.
+- **Datos:** importar el reporte de stock (**.xlsx** o **.csv**) con detección automática de columnas
+  (Ubicación, Producto, Cantidad, Tipo ABC, Fecha de ingreso, Lote, Último conteo, Dónde se usa).
+  Los datos quedan guardados en esa PC. `.xlsb` no se lee: guardarlo como `.xlsx` o `.csv`.
+- Minimapa (plano 2D), carteles, panel adaptable a celular.
 
-No hay otras dependencias. Los carteles 3D se dibujan con canvas, así que la app
-funciona sin conexión a internet (no descarga fuentes ni texturas).
+## Cómo abrirlo
 
-## Requisitos
+**Sin instalar nada:** abrir `Deposito3D.html` con doble clic (Chrome o Edge).
+Se genera con `npm run build:standalone`.
 
-- Node.js 20 o superior (probado con Node 22)
-
-## Versión sin instalar nada (un solo archivo)
-
-`npm run build:standalone` genera **`Deposito3D.html`**: un único archivo que se abre
-con doble clic en Chrome o Edge, sin Node.js ni servidor. Sirve para mostrar el
-prototipo en cualquier PC. No se actualiza solo: hay que generarlo de nuevo con cada cambio.
-
-## Cómo ejecutarlo (modo desarrollo)
-
-**En Windows, lo más simple:** doble clic en `INICIAR.bat`. La primera vez instala
-las dependencias; después abre el navegador en el depósito 3D.
-
-**Desde una terminal:**
+**Modo desarrollo** (para seguir programando), con Node.js 20+:
 
 ```bash
 cd Deposito3D
 npm install      # solo la primera vez
-npm run dev
+npm run dev      # http://localhost:5173, se recarga solo al guardar
 ```
 
-Abrí en el navegador **http://localhost:5173**.
-Cada vez que se guarda un archivo, el navegador se actualiza solo.
+En Windows también: doble clic en `INICIAR.bat`.
 
-Como el servidor escucha en la red (`host: true`), también se puede abrir desde
-otra PC o celular de la misma red con `http://<IP-de-esta-PC>:5173`
-(la consola de `npm run dev` muestra la dirección).
-
-Otros comandos:
-
-- `npm run typecheck` – verifica tipos.
-- `npm run build` – genera la versión compilada en `dist/`.
-- `npm run preview` – sirve la versión compilada.
-
-## Uso
-
-- **Rotar:** arrastrar con botón izquierdo · **Desplazar:** botón derecho · **Zoom:** rueda.
-- **Táctil:** un dedo rota, dos dedos hacen zoom y desplazan.
-- **Clic en un hueco** de la estantería → selecciona la ubicación.
-- **Clic en la estructura** (parantes/largueros) → selecciona la estantería completa,
-  con un mapa de sus ubicaciones en el panel.
-- **Clic en el vacío** → quita la selección.
-- **Buscador:** escribir un código (`P1-I-03-2`) o una estantería (`P2-D`) y Enter.
-- **Vistas:** General, Planta (desde arriba) y Cabecera. "Centrar vista" acerca la cámara a la selección.
-- **Colorear por estado:** pinta las ubicaciones según ocupada / libre / reservada / bloqueada.
-
-### Codificación de ubicaciones
-
-`P1-I-03-2` = **P**asillo 1 · lado **I**zquierdo (o **D**erecho) · módulo **03** · nivel **2** (1 = piso).
-Cada pasillo tiene una fila de estanterías a cada lado; las filas interiores quedan espalda con espalda.
+Otros comandos: `npm run typecheck`, `npm run build`, `npm run preview`.
 
 ## Estructura del código
 
 ```
 src/
-  config/warehouseLayout.ts   ← medidas y cantidades (pasillos, módulos, niveles)
-  domain/types.ts             ← tipos: Rack, StorageLocation, Selection…
-  domain/generateWarehouse.ts ← arma el modelo (posiciones y códigos) desde la config
-  data/mockInventory.ts       ← datos ficticios (a reemplazar por la fuente real)
-  state/WarehouseContext.tsx  ← estado compartido: selección, hover, cámara
-  scene/                      ← todo lo 3D
-    WarehouseScene.tsx        ← Canvas, luces
-    CameraRig.tsx             ← controles de órbita y animación de cámara
-    Building.tsx              ← piso, paredes, demarcación y carteles de pasillo
-    RackModel.tsx             ← estructura de una fila de estanterías
-    StorageSlot.tsx           ← una ubicación: paletas + volumen seleccionable
-    Label.tsx, colors.ts
-  ui/                         ← interfaz HTML
-    Toolbar.tsx, InfoPanel.tsx
+  config/layout.ts            ← LAYOUT: filas, módulos, niveles, medidas, zonas (ajustar con ingeniería)
+  config/policies.ts          ← reglas: frecuencia de conteo por clase, tramos de antigüedad
+  domain/types.ts             ← tipos: ubicación, fila, zona, registro de stock, selección
+  domain/warehouse.ts         ← arma la geometría y normaliza códigos ("c05.01" → "C5.1")
+  domain/inventory.ts         ← índices: por ubicación, por pieza (FIFO), estado de conteo
+  data/demoInventory.ts       ← datos de demostración
+  data/import/                ← lector .xlsx (fflate) y .csv, detección de columnas
+  data/storage.ts             ← guardado local (se reemplaza por servidor en la etapa "en línea")
+  state/store.ts              ← estado de la app (zustand): selección, modo de color, cámara
+  scene/                      ← 3D (React Three Fiber)
+    WarehouseScene.tsx  Building.tsx  Racks.tsx  Loads.tsx  Zones.tsx
+    LocationPicker.tsx  Highlights.tsx  CameraRig.tsx  WalkControls.tsx  cameraPaths.ts
+  ui/                         ← interfaz: barra, buscador, leyenda, minimapa, paneles
+    panels/ DetailPanel  Dashboard  CountsPanel  DataPanel
 ```
 
 ### Cambios habituales
 
-- **Más pasillos, módulos o niveles / otras medidas:** editar `src/config/warehouseLayout.ts`.
-- **Colores del modelo:** `src/scene/colors.ts`. Colores de estados: `STATUS_META` en `src/data/mockInventory.ts`.
-- **Datos reales a futuro:** reemplazar `getLocationInfo()` en `src/data/mockInventory.ts`
-  manteniendo la misma interfaz; la escena y el panel no necesitan cambios.
+- **Layout real:** editar `src/config/layout.ts` (pasillos con su fila izquierda/derecha, módulos por fila, niveles, medidas y zonas).
+- **Frecuencias de conteo:** `src/config/policies.ts`.
+- **Conexión en línea (QAD) a futuro:** reemplazar `data/storage.ts` y la carga de `Inventory` por llamadas a un servidor;
+  la escena y los paneles trabajan sobre el mismo modelo `StockRecord`.
+
+## Hoja de ruta
+
+1. **Prototipo (actual):** 3D, búsqueda, FIFO, conteo cíclico, tablero, carga por reporte.
+2. **Layout real:** plano de ingeniería, nomenclatura y medidas exactas.
+3. **En línea:** servidor común + conexión con QAD (movimientos y descuentos en vivo).
+4. **Planta completa:** WIP y preproducción en 3D, más tableros y reportes.

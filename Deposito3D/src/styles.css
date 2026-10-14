@@ -39,6 +39,7 @@ select, input { font: inherit; }
 }
 .toolbar button:hover { background: var(--line-dark); }
 .seg { display: flex; gap: 4px; }
+.toolbar button.on { background: #0891b2; border-color: #0891b2; color: #fff; }
 .select { display: flex; align-items: center; gap: 6px; }
 .select span { color: #94a3b8; }
 .legend-box {
@@ -94,6 +95,25 @@ select, input { font: inherit; }
 .mm-label { font-size: 1.6px; font-weight: 700; fill: #0f172a; dominant-baseline: middle; pointer-events: none; }
 .mm-mark { fill: #d946ef; stroke: #fff; stroke-width: .3; }
 .mm-hit { cursor: pointer; }
+
+/* Modo recorrido */
+.walk-hud { position: absolute; inset: 0; pointer-events: none; }
+.walk-help {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,.82); color: #e2e8f0;
+  padding: 6px 12px; border-radius: 999px; font-size: 12.5px; white-space: nowrap;
+}
+.walk-pad {
+  position: absolute; right: 16px; bottom: 16px; display: grid; grid-template-columns: repeat(3, 48px); gap: 6px; pointer-events: auto;
+}
+.walk-pad button {
+  width: 48px; height: 48px; border-radius: 10px; border: 0; background: rgba(15,23,42,.75); color: #fff; font-size: 20px;
+  touch-action: none; user-select: none;
+}
+.walk-pad button:active { background: #0891b2; }
+.walk-exit {
+  position: absolute; right: 16px; bottom: 132px; pointer-events: auto; border: 0; border-radius: 8px; padding: 7px 12px;
+  background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2); font-weight: 600;
+}
 
 /* ---------- Panel lateral ---------- */
 .panel {
@@ -245,6 +265,7 @@ select, input { font: inherit; }
   .search-results { width: min(92vw, 360px); }
   .minimap { display: none; }
   .legend-box { top: 8px; left: 8px; padding: 6px 8px; }
+  .walk-help { display: none; }
   .toolbar-end .check { display: none; }
 }
 @media (max-width: 480px) {

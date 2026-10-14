@@ -6,6 +6,8 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
   const mode = useStore((s) => s.colorMode);
   const setMode = useStore((s) => s.setColorMode);
   const setView = useStore((s) => s.setView);
+  const walkMode = useStore((s) => s.walkMode);
+  const setWalkMode = useStore((s) => s.setWalkMode);
   const showLabels = useStore((s) => s.showLabels);
   const setShowLabels = useStore((s) => s.setShowLabels);
   const source = useStore((s) => s.inventory.source);
@@ -20,6 +22,9 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
       <div className="seg" role="group" aria-label="Vistas">
         <button onClick={() => setView('general')}>General</button>
         <button onClick={() => setView('planta')}>Planta</button>
+        <button className={walkMode ? 'on' : undefined} onClick={() => setWalkMode(!walkMode)} title="Caminar por el depósito en primera persona">
+          🚶 Recorrer
+        </button>
       </div>
       <label className="select">
         <span>Ver por</span>

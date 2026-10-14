@@ -28,6 +28,8 @@ interface AppState {
   colorMode: ColorMode;
   tab: PanelTab;
   showLabels: boolean;
+  /** Recorrido en primera persona activo. */
+  walkMode: boolean;
   /** Pedido de movimiento de cámara (id cambia en cada pedido). */
   camera: { id: number; path: CameraKeyframe[] } | null;
 
@@ -37,6 +39,7 @@ interface AppState {
   setColorMode: (m: ColorMode) => void;
   setTab: (t: PanelTab) => void;
   setShowLabels: (v: boolean) => void;
+  setWalkMode: (v: boolean) => void;
   flyTo: (path: CameraKeyframe[]) => void;
   focusSelection: () => void;
   walkTo: (code: string) => void;
@@ -61,6 +64,7 @@ export const useStore = create<AppState>((set, get) => ({
   colorMode: 'ocupacion',
   tab: 'panel',
   showLabels: true,
+  walkMode: false,
   camera: null,
 
   select: (selection, opts) => {
@@ -75,8 +79,9 @@ export const useStore = create<AppState>((set, get) => ({
   setColorMode: (colorMode) => set({ colorMode }),
   setTab: (tab) => set({ tab }),
   setShowLabels: (showLabels) => set({ showLabels }),
+  setWalkMode: (walkMode) => set({ walkMode }),
   flyTo: (path) => {
-    if (path.length) set((s) => ({ camera: { id: (s.camera?.id ?? 0) + 1, path } }));
+    if (path.length) set((s) => ({ walkMode: false, camera: { id: (s.camera?.id ?? 0) + 1, path } }));
   },
   focusSelection: () => get().flyTo(viewForSelection(warehouse, get().index, get().selection)),
   walkTo: (code) => get().flyTo(walkToLocation(warehouse, code)),

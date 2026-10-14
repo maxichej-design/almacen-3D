@@ -4,6 +4,7 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useStore } from '../state/store';
+import { WalkControls } from './WalkControls';
 
 interface Segment {
   fromPos: THREE.Vector3;
@@ -21,6 +22,7 @@ const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 
  */
 export function CameraRig() {
   const request = useStore((s) => s.camera);
+  const walkMode = useStore((s) => s.walkMode);
   const bounds = useStore((s) => s.warehouse.bounds);
   const camera = useThree((s) => s.camera);
   const controls = useRef<OrbitControlsImpl>(null);
@@ -52,6 +54,18 @@ export function CameraRig() {
     return () => c.removeEventListener('start', stop);
   }, []);
 
+  // Al salir del recorrido, la órbita gira alrededor de lo que se estaba mirando.
+  useEffect(() => {
+    const c = controls.current;
+    if (walkMode || !c) return;
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    if (camera.position.y < 2.5) {
+      c.target.copy(camera.position).addScaledVector(dir, 4);
+      c.update();
+    }
+  }, [walkMode, camera]);
+
   useFrame((_, delta) => {
     const c = controls.current;
     const seg = queue.current[0];
@@ -71,9 +85,12 @@ export function CameraRig() {
 
   const span = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ);
   return (
+    <>
+    {walkMode && <WalkControls />}
     <OrbitControls
       ref={controls}
       makeDefault
+      enabled={!walkMode}
       enableDamping
       dampingFactor={0.1}
       minDistance={0.5}
@@ -82,5 +99,6 @@ export function CameraRig() {
       screenSpacePanning
       target={[(bounds.minX + bounds.maxX) / 2, 1.5, (bounds.minZ + bounds.maxZ) / 2]}
     />
+    </>
   );
 }
