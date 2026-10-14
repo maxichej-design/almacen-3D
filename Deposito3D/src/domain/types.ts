@@ -1,60 +1,105 @@
-/** Lado del pasillo en el que está una fila de estanterías. */
-export type AisleSide = 'I' | 'D'; // Izquierda | Derecha
+/** Clasificación ABC. D = obsoleta (ya no se usa). */
+export type AbcClass = 'A' | 'B' | 'C' | 'D';
 
-export type LocationStatus = 'ocupada' | 'libre' | 'reservada' | 'bloqueada';
-
-/** Una ubicación es una posición de paleta: un módulo en un nivel. */
-export interface StorageLocation {
-  /** Código único, p. ej. "P1-I-03-2". */
+/** Una ubicación de estantería (posición de pallet): fila + módulo + nivel. */
+export interface RackLocation {
+  /** Código normalizado, p. ej. "C5.1". */
   code: string;
-  rackId: string;
+  rowId: string;
   aisleId: string;
-  side: AisleSide;
-  /** Número de módulo dentro de la fila (1..n). */
-  bay: number;
-  /** Nivel (1 = piso). */
+  module: number;
+  /** 1 = piso. */
   level: number;
-  /** Centro de la ubicación en coordenadas del mundo. */
+  /** Centro del hueco en coordenadas del mundo. */
   position: [number, number, number];
-  /** Tamaño del volumen útil. */
   size: [number, number, number];
+  /** Altura donde apoya la carga (piso o larguero). */
+  baseY: number;
+  /** Hacia dónde mira el frente (+1 / -1 en Z). */
+  facing: 1 | -1;
+  /** Índice dentro de Warehouse.locations (para dibujado instanciado). */
+  index: number;
 }
 
-/** Una estantería es una fila continua de módulos a un lado de un pasillo. */
-export interface Rack {
+/** Fila de estanterías identificada por letra. */
+export interface RackRow {
   id: string;
   aisleId: string;
   aisleName: string;
-  side: AisleSide;
-  /** Esquina inicial (x mínimo, piso, z mínimo). */
-  origin: [number, number, number];
-  /** Dirección hacia la que mira el frente de la estantería (+1 / -1 en Z). */
   facing: 1 | -1;
-  bays: number;
-  levels: number;
-  locations: StorageLocation[];
+  /** Extremos en X (módulo 1 está en x1, del lado de la playa). */
+  x0: number;
+  x1: number;
+  /** Borde trasero/delantero en Z. */
+  z0: number;
+  z1: number;
+  locations: RackLocation[];
 }
 
 export interface Aisle {
   id: string;
   name: string;
-  sign: string;
-  /** Centro del pasillo en Z. */
   centerZ: number;
   width: number;
+  left: string;
+  right: string;
 }
 
-export interface WarehouseModel {
+export interface Zone {
+  code: string;
+  name: string;
+  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso';
+  /** Rectángulo en el mundo. */
+  x0: number;
+  z0: number;
+  w: number;
+  d: number;
+}
+
+export interface Warehouse {
   aisles: Aisle[];
-  racks: Rack[];
-  /** Acceso directo a cualquier ubicación por código. */
-  locationsByCode: Map<string, StorageLocation>;
-  racksById: Map<string, Rack>;
-  /** Extensión total del área de estanterías. */
+  rows: RackRow[];
+  locations: RackLocation[];
+  locationIndex: Map<string, RackLocation>;
+  rowIndex: Map<string, RackRow>;
+  zones: Zone[];
+  zoneIndex: Map<string, Zone>;
+  /** Extensión del edificio (estanterías + playa). */
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number; height: number };
+}
+
+/** Un registro de stock: una pieza (o lote) en una ubicación. */
+export interface StockRecord {
+  location: string;
+  partNumber: string;
+  description?: string;
+  qty: number;
+  uom?: string;
+  abc?: AbcClass;
+  /** Fecha de ingreso (ISO yyyy-mm-dd), base del FIFO. */
+  receivedAt?: string;
+  lot?: string;
+  /** Fecha del último conteo cíclico (ISO). */
+  lastCountAt?: string;
+  /** Dónde se usa (módulo / producto / proyecto), si el reporte lo trae. */
+  usedIn?: string;
+}
+
+export interface Inventory {
+  source: 'demo' | 'import';
+  /** Nombre del archivo importado o descripción. */
+  label: string;
+  loadedAt: string;
+  records: StockRecord[];
 }
 
 export type Selection =
   | { kind: 'location'; code: string }
-  | { kind: 'rack'; id: string }
+  | { kind: 'row'; id: string }
+  | { kind: 'zone'; code: string }
+  | { kind: 'part'; partNumber: string }
   | null;
+
+export type ColorMode = 'ocupacion' | 'abc' | 'antiguedad' | 'conteo';
+
+export type CountStatus = 'al-dia' | 'por-vencer' | 'vencido' | 'obsoleto' | 'sin-stock';

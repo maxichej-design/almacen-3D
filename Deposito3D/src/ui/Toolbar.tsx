@@ -1,73 +1,44 @@
-import { useState, type FormEvent } from 'react';
-import { STATUS_META } from '../data/mockInventory';
-import type { LocationStatus } from '../domain/types';
-import { useWarehouse } from '../state/WarehouseContext';
+import { COLOR_MODES } from '../scene/palette';
+import { useStore } from '../state/store';
+import { Search } from './Search';
 
-export function Toolbar() {
-  const { model, select, focusSelection, setView, colorByStatus, setColorByStatus } = useWarehouse();
-  const [query, setQuery] = useState('');
-  const [error, setError] = useState(false);
-
-  const onSearch = (e: FormEvent) => {
-    e.preventDefault();
-    const code = query.trim().toUpperCase();
-    if (model.locationsByCode.has(code)) {
-      select({ kind: 'location', code });
-      focusSelection({ kind: 'location', code });
-      setError(false);
-    } else if (model.racksById.has(code)) {
-      select({ kind: 'rack', id: code });
-      focusSelection({ kind: 'rack', id: code });
-      setError(false);
-    } else {
-      setError(true);
-    }
-  };
+export function Toolbar({ onAbout }: { onAbout: () => void }) {
+  const mode = useStore((s) => s.colorMode);
+  const setMode = useStore((s) => s.setColorMode);
+  const setView = useStore((s) => s.setView);
+  const showLabels = useStore((s) => s.showLabels);
+  const setShowLabels = useStore((s) => s.setShowLabels);
+  const source = useStore((s) => s.inventory.source);
 
   return (
     <header className="toolbar">
       <div className="brand">
         <span className="brand-mark">▦</span> Deposito3D
-        <span className="brand-tag">prototipo</span>
+        <span className={`brand-tag ${source === 'demo' ? 'demo' : 'real'}`}>{source === 'demo' ? 'demo' : 'datos reales'}</span>
       </div>
-
-      <form className="search" onSubmit={onSearch}>
-        <input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setError(false);
-          }}
-          placeholder="Buscar ubicación (ej. P1-I-03-2)"
-          aria-label="Buscar ubicación"
-          className={error ? 'error' : undefined}
-        />
-        <button type="submit">Ir</button>
-      </form>
-
-      <div className="views" role="group" aria-label="Vistas">
+      <Search />
+      <div className="seg" role="group" aria-label="Vistas">
         <button onClick={() => setView('general')}>General</button>
         <button onClick={() => setView('planta')}>Planta</button>
-        <button onClick={() => setView('frente')}>Cabecera</button>
       </div>
-
-      <label className="toggle">
-        <input
-          type="checkbox"
-          checked={colorByStatus}
-          onChange={(e) => setColorByStatus(e.target.checked)}
-        />
-        Colorear por estado
+      <label className="select">
+        <span>Ver por</span>
+        <select value={mode} onChange={(e) => setMode(e.target.value as typeof mode)}>
+          {COLOR_MODES.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </select>
       </label>
-
-      <ul className="legend">
-        {(Object.keys(STATUS_META) as LocationStatus[]).map((s) => (
-          <li key={s}>
-            <span className="dot" style={{ background: STATUS_META[s].color }} />
-            {STATUS_META[s].label}
-          </li>
-        ))}
-      </ul>
+      <div className="toolbar-end">
+        <label className="check">
+          <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} /> Carteles
+        </label>
+        <button className="ghost" onClick={onAbout} title="Qué es Deposito3D">
+          ?
+        </button>
+      </div>
     </header>
   );
 }

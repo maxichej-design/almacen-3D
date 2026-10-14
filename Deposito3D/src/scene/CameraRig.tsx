@@ -3,62 +3,84 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { useWarehouse } from '../state/WarehouseContext';
+import { useStore } from '../state/store';
+
+interface Segment {
+  fromPos: THREE.Vector3;
+  fromTarget: THREE.Vector3;
+  toPos: THREE.Vector3;
+  toTarget: THREE.Vector3;
+  duration: number;
+}
+
+const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /**
- * Controles de navegación (rotar / acercar / desplazar) y animación suave
- * de la cámara cuando se pide una vista o centrar una selección.
+ * Controles de órbita + animación de cámara por tramos (vuelos y recorridos a pie).
+ * Cualquier interacción del usuario cancela la animación.
  */
 export function CameraRig() {
-  const { cameraRequest, model } = useWarehouse();
-  const controls = useRef<OrbitControlsImpl>(null);
+  const request = useStore((s) => s.camera);
+  const bounds = useStore((s) => s.warehouse.bounds);
   const camera = useThree((s) => s.camera);
-  const anim = useRef<{ target: THREE.Vector3; position: THREE.Vector3 } | null>(null);
+  const controls = useRef<OrbitControlsImpl>(null);
+  const queue = useRef<Segment[]>([]);
+  const elapsed = useRef(0);
 
   useEffect(() => {
-    if (!cameraRequest) return;
-    anim.current = {
-      target: new THREE.Vector3(...cameraRequest.target),
-      position: new THREE.Vector3(...cameraRequest.position),
-    };
-  }, [cameraRequest]);
+    const c = controls.current;
+    if (!request || !c) return;
+    let pos = camera.position.clone();
+    let tgt = c.target.clone();
+    queue.current = request.path.map((kf) => {
+      const toPos = new THREE.Vector3(...kf.position);
+      const toTarget = new THREE.Vector3(...kf.target);
+      const dist = pos.distanceTo(toPos) + tgt.distanceTo(toTarget) * 0.5;
+      const seg = { fromPos: pos, fromTarget: tgt, toPos, toTarget, duration: kf.duration ?? Math.min(2.2, 0.7 + dist / 30) };
+      pos = toPos;
+      tgt = toTarget;
+      return seg;
+    });
+    elapsed.current = 0;
+  }, [request, camera]);
 
-  // Si el usuario empieza a mover la cámara, se cancela la animación en curso.
   useEffect(() => {
     const c = controls.current;
     if (!c) return;
-    const stop = () => (anim.current = null);
+    const stop = () => (queue.current = []);
     c.addEventListener('start', stop);
     return () => c.removeEventListener('start', stop);
   }, []);
 
   useFrame((_, delta) => {
-    const a = anim.current;
     const c = controls.current;
-    if (!a || !c) return;
-    const t = 1 - Math.exp(-delta * 5);
-    camera.position.lerp(a.position, t);
-    c.target.lerp(a.target, t);
+    const seg = queue.current[0];
+    if (!c || !seg) return;
+    // Basado en tiempo real: en PCs lentas la animación saltea cuadros pero dura lo mismo.
+    elapsed.current += Math.min(delta, 0.5);
+    const t = Math.min(1, elapsed.current / seg.duration);
+    const k = ease(t);
+    camera.position.lerpVectors(seg.fromPos, seg.toPos, k);
+    c.target.lerpVectors(seg.fromTarget, seg.toTarget, k);
     c.update();
-    if (camera.position.distanceTo(a.position) < 0.02 && c.target.distanceTo(a.target) < 0.02) {
-      anim.current = null;
+    if (t >= 1) {
+      queue.current.shift();
+      elapsed.current = 0;
     }
   });
 
-  const { minX, maxX, minZ, maxZ } = model.bounds;
-  const span = Math.max(maxX - minX, maxZ - minZ);
-
+  const span = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ);
   return (
     <OrbitControls
       ref={controls}
       makeDefault
       enableDamping
       dampingFactor={0.1}
-      minDistance={2}
-      maxDistance={span * 2.5}
-      maxPolarAngle={Math.PI / 2 - 0.03}
+      minDistance={0.5}
+      maxDistance={span * 2.2}
+      maxPolarAngle={Math.PI / 2 - 0.02}
       screenSpacePanning
-      target={[0, 1.5, 0]}
+      target={[(bounds.minX + bounds.maxX) / 2, 1.5, (bounds.minZ + bounds.maxZ) / 2]}
     />
   );
 }

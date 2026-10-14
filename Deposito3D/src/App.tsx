@@ -1,20 +1,25 @@
+import { useState } from 'react';
 import { WarehouseScene } from './scene/WarehouseScene';
-import { WarehouseProvider } from './state/WarehouseContext';
-import { InfoPanel } from './ui/InfoPanel';
+import { About } from './ui/About';
+import { Legend } from './ui/Legend';
+import { Minimap } from './ui/Minimap';
+import { SidePanel } from './ui/SidePanel';
 import { Toolbar } from './ui/Toolbar';
 
 export default function App() {
+  const [about, setAbout] = useState(false);
   return (
-    <WarehouseProvider>
-      <div className="app">
-        <Toolbar />
-        <main className="main">
-          <div className="viewport">
-            <WarehouseScene />
-          </div>
-          <InfoPanel />
-        </main>
-      </div>
-    </WarehouseProvider>
+    <div className="app">
+      <Toolbar onAbout={() => setAbout(true)} />
+      <main className="main">
+        <div className="viewport">
+          <WarehouseScene />
+          <Legend />
+          <Minimap />
+        </div>
+        <SidePanel />
+      </main>
+      {about && <About onClose={() => setAbout(false)} />}
+    </div>
   );
 }

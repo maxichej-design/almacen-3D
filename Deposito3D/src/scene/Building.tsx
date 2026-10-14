@@ -1,88 +1,106 @@
-import { warehouseLayout } from '../config/warehouseLayout';
-import { useWarehouse } from '../state/WarehouseContext';
-import { SCENE_COLORS } from './colors';
+import { layout } from '../config/layout';
+import { useStore } from '../state/store';
 import { Label } from './Label';
+import { SCENE } from './palette';
 
+const noRaycast = () => null;
 const LINE_W = 0.1;
 
-/** Piso, demarcación de pasillos y carteles. */
+/** Piso, paredes, portones, demarcación y carteles fijos. */
 export function Building() {
-  const { model } = useWarehouse();
-  const { minX, maxX, minZ, maxZ, height } = model.bounds;
-  const m = warehouseLayout.floorMargin;
-  const floorW = maxX - minX + m * 2;
-  const floorD = maxZ - minZ + m * 2;
-  const rowLength = maxX - minX;
+  const wh = useStore((s) => s.warehouse);
+  const { minX, maxX, minZ, maxZ, height } = wh.bounds;
+  const w = maxX - minX;
+  const d = maxZ - minZ;
+  const cx = (minX + maxX) / 2;
+  const cz = (minZ + maxZ) / 2;
+  const H = layout.wallHeight;
+  const rowsEndX = wh.rows[0]?.x1 ?? 0;
+  const rowsStartX = wh.rows[0]?.x0 ?? 0;
 
   return (
     <group>
-      {/* Piso de hormigón */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[floorW, floorD]} />
-        <meshStandardMaterial color={SCENE_COLORS.floor} roughness={0.35} metalness={0.05} />
+      {/* Piso epoxi */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0, cz]} receiveShadow raycast={noRaycast}>
+        <planeGeometry args={[w, d]} />
+        <meshStandardMaterial color={SCENE.floor} roughness={0.35} metalness={0.05} />
       </mesh>
 
-      {/* Pared de fondo y lateral, bajas para no tapar la vista */}
-      <mesh position={[0, warehouseLayout.wallHeight / 2, minZ - m]} receiveShadow>
-        <boxGeometry args={[floorW, warehouseLayout.wallHeight, 0.2]} />
-        <meshStandardMaterial color={SCENE_COLORS.wall} roughness={0.9} />
+      {/* Pared del fondo (detrás de las filas) y lateral con portones */}
+      <mesh position={[minX - 0.1, H / 2, cz]} receiveShadow raycast={noRaycast}>
+        <boxGeometry args={[0.2, H, d]} />
+        <meshStandardMaterial color={SCENE.wall} roughness={0.9} />
       </mesh>
-      <mesh position={[minX - m, warehouseLayout.wallHeight / 2, 0]} receiveShadow>
-        <boxGeometry args={[0.2, warehouseLayout.wallHeight, floorD]} />
-        <meshStandardMaterial color={SCENE_COLORS.wallSide} roughness={0.9} />
+      <mesh position={[cx, H / 2, minZ - 0.1]} receiveShadow raycast={noRaycast}>
+        <boxGeometry args={[w, H, 0.2]} />
+        <meshStandardMaterial color={SCENE.wallSide} roughness={0.9} />
       </mesh>
+      {[3.5, 7.5].map((x) => (
+        <group key={x} position={[rowsEndX + x, 0, minZ + 0.01]}>
+          <mesh position={[0, 2.25, 0]} raycast={noRaycast}>
+            <boxGeometry args={[3.2, 4.5, 0.06]} />
+            <meshStandardMaterial color={SCENE.door} metalness={0.4} roughness={0.5} />
+          </mesh>
+          {Array.from({ length: 8 }, (_, i) => (
+            <mesh key={i} position={[0, 0.3 + i * 0.55, 0.035]} raycast={noRaycast}>
+              <boxGeometry args={[3.2, 0.03, 0.01]} />
+              <meshBasicMaterial color="#64748b" />
+            </mesh>
+          ))}
+          <Label text="PORTÓN" position={[0, 4.9, 0.05]} height={0.35} background="#0f172a" color="#facc15" />
+        </group>
+      ))}
 
-      {model.aisles.map((aisle) => {
-        // Líneas pegadas al pie de cada fila, como en el piso real.
-        const half = aisle.width / 2 - LINE_W / 2 - 0.02;
+      {/* Demarcación de pasillos y nombre pintado en el piso */}
+      {wh.aisles.map((a) => {
+        const half = a.width / 2 - LINE_W / 2 - 0.02;
         return (
-          <group key={aisle.id}>
-            {/* Líneas amarillas de demarcación del pasillo */}
+          <group key={a.id}>
             {[-half, half].map((dz) => (
               <mesh
                 key={dz}
                 rotation={[-Math.PI / 2, 0, 0]}
-                position={[0, 0.005, aisle.centerZ + dz]}
-                raycast={() => null}
+                position={[(rowsStartX + rowsEndX) / 2 + 0.5, 0.004, a.centerZ + dz]}
+                raycast={noRaycast}
               >
-                <planeGeometry args={[rowLength + 2, LINE_W]} />
-                <meshBasicMaterial color={SCENE_COLORS.floorLine} />
+                <planeGeometry args={[rowsEndX - rowsStartX + 1, LINE_W]} />
+                <meshBasicMaterial color={SCENE.floorLine} />
               </mesh>
             ))}
-            {/* Nombre pintado en el piso, en ambas cabeceras */}
             <Label
-              text={`${aisle.name.toUpperCase()} (${aisle.sign})`}
-              position={[maxX + 0.6, 0.01, aisle.centerZ]}
+              text={`${a.name.toUpperCase()}  ${a.left} | ${a.right}`}
+              position={[rowsEndX + 1.4, 0.01, a.centerZ]}
               rotation={[-Math.PI / 2, 0, Math.PI / 2]}
-              height={0.9}
-              color="#facc15"
-              background="#4b5563"
+              height={0.8}
+              color={SCENE.floorLine}
+              background="#475569"
             />
-            {/* Letra del pasillo pintada en la pared del fondo + matafuego */}
-            <Label
-              text={aisle.sign}
-              position={[minX - m + 0.11, 4.2, aisle.centerZ]}
-              rotation={[0, Math.PI / 2, 0]}
-              height={1.1}
-              background="#ffffff"
-            />
-            <mesh position={[minX - m + 0.2, 1.3, aisle.centerZ + 0.6]} raycast={() => null}>
+            {/* Matafuego al fondo del pasillo */}
+            <mesh position={[minX + 0.15, 1.2, a.centerZ + 0.8]} raycast={noRaycast}>
               <cylinderGeometry args={[0.09, 0.09, 0.55, 16]} />
               <meshStandardMaterial color="#dc2626" roughness={0.4} />
             </mesh>
-            {/* Cartel colgante sobre el pasillo */}
-            {[minX - 0.4, maxX + 0.4].map((x) => (
-              <Label
-                key={x}
-                text={`${aisle.sign} · ${aisle.name}`}
-                position={[x, height + 0.9, aisle.centerZ]}
-                rotation={[0, x > 0 ? Math.PI / 2 : -Math.PI / 2, 0]}
-                height={0.55}
-              />
-            ))}
           </group>
         );
       })}
+
+      {/* Línea que separa la playa de las estanterías */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[rowsEndX + 0.6, 0.004, cz]} raycast={noRaycast}>
+        <planeGeometry args={[LINE_W * 1.5, d - 2]} />
+        <meshBasicMaterial color={SCENE.floorLine} />
+      </mesh>
+
+      {/* Letra de cada fila pintada en la pared del fondo */}
+      {wh.rows.map((r) => (
+        <Label
+          key={r.id}
+          text={r.id}
+          position={[minX + 0.02, height + 1.2, (r.z0 + r.z1) / 2]}
+          rotation={[0, Math.PI / 2, 0]}
+          height={1}
+          background="#ffffff"
+        />
+      ))}
     </group>
   );
 }
