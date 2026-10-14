@@ -244,7 +244,7 @@ function PartDetail({ pn }: { pn: string }) {
         )}
       </div>
       <dl className="grid">
-        <dt>Stock total</dt><dd>{fmtNum(part.totalQty)} {part.uom ?? ''}</dd>
+        <dt>Stock disponible</dt><dd>{fmtNum(part.totalQty)} {part.uom ?? ''}</dd>
         <dt>Ubicaciones</dt><dd>{part.fifo.length}</dd>
         {part.usedIn && (<><dt>Se usa en</dt><dd>{part.usedIn}</dd></>)}
       </dl>
@@ -268,6 +268,24 @@ function PartDetail({ pn }: { pn: string }) {
           </li>
         ))}
       </ol>
+      {part.fifo.length === 0 && <p className="muted small">Sin stock disponible en el almacén.</p>}
+      {part.outside.length > 0 && (
+        <>
+          <h3>Fuera del almacén (WIP / expedición)</h3>
+          <ul className="fifo-list">
+            {part.outside.map((r, i) => (
+              <li key={`${r.location}-${i}`}>
+                <button className="link code" onClick={() => select({ kind: 'zone', code: r.location }, { fly: true })}>
+                  {r.location}
+                </button>
+                <span className="fifo-info">
+                  {fmtNum(r.qty)} {r.uom ?? ''} · ingreso {formatDate(r.receivedAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

@@ -35,6 +35,21 @@ export function Search() {
         selection: { kind: 'location', code },
       });
     }
+    // "C5" → todas las ubicaciones del módulo 5 de la fila C.
+    const mod = /^([A-Za-z])0*(\d+)$/.exec(query);
+    if (mod) {
+      for (const l of wh.locations) {
+        if (l.rowId === mod[1].toUpperCase() && l.module === Number(mod[2])) {
+          const sum = index.byLocation.get(l.code);
+          out.push({
+            key: `l-${l.code}`,
+            title: l.code,
+            subtitle: sum ? `Nivel ${l.level} · ${sum.partCount} pieza(s)` : `Nivel ${l.level} · libre`,
+            selection: { kind: 'location', code: l.code },
+          });
+        }
+      }
+    }
     const row = wh.rowIndex.get(query.toUpperCase());
     if (row) out.push({ key: `r-${row.id}`, title: `Fila ${row.id}`, subtitle: row.aisleName, selection: { kind: 'row', id: row.id } });
     for (const z of wh.zones) {

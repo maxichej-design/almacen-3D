@@ -11,7 +11,7 @@ export function RecordList({ records }: { records: StockRecord[] }) {
   return (
     <ul className="records">
       {records.map((r, i) => {
-        const { rank, total } = fifoRank(index, r);
+        const fifo = fifoRank(index, r);
         const age = daysSince(r.receivedAt, index.today);
         return (
           <li key={`${r.partNumber}-${i}`} className="record">
@@ -43,9 +43,11 @@ export function RecordList({ records }: { records: StockRecord[] }) {
               )}
               <dt>FIFO</dt>
               <dd>
-                {total > 1 ? (
-                  <span className={rank === 1 ? 'fifo first' : 'fifo'}>
-                    {rank === 1 ? 'Sale primero' : `Posición ${rank}`} de {total}
+                {!fifo ? (
+                  <span className="muted">Fuera del FIFO (ya salió del almacén)</span>
+                ) : fifo.total > 1 ? (
+                  <span className={fifo.rank === 1 ? 'fifo first' : 'fifo'}>
+                    {fifo.rank === 1 ? 'Sale primero' : `Posición ${fifo.rank}`} de {fifo.total}
                   </span>
                 ) : (
                   <span className="muted">Única ubicación</span>

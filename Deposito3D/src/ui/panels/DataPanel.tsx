@@ -86,8 +86,11 @@ export function DataPanel() {
 
   const commit = () => {
     if (!result || !loaded) return;
-    loadInventory({ source: 'import', label: loaded.fileName, loadedAt: todayIso(), records: result.records });
-    setDone(`Se cargaron ${fmtNum(result.records.length)} registros de ${loaded.fileName}.`);
+    const saved = loadInventory({ source: 'import', label: loaded.fileName, loadedAt: todayIso(), records: result.records });
+    setDone(
+      `Se cargaron ${fmtNum(result.records.length)} registros de ${loaded.fileName}.` +
+        (saved ? '' : ' Atención: es demasiado grande para guardarlo en esta PC; al cerrar la página habrá que volver a cargarlo.'),
+    );
     setLoaded(null);
   };
 

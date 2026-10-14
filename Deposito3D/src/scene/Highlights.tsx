@@ -45,6 +45,15 @@ export function Highlights() {
       )}
       {selBox && <Pulse position={selBox.position} size={selBox.size} color={SCENE.selected} />}
 
+      {part?.outside.map((rec, i) => {
+        const z = wh.zoneIndex.get(rec.location);
+        if (!z) return null;
+        return (
+          <Billboard key={`o-${rec.location}-${i}`} position={[z.x0 + z.w / 2, 2.2 + (i % 3) * 0.45, z.z0 + z.d / 2]}>
+            <Label text={`${z.code} · fuera de FIFO`} height={0.3} background="#e2e8f0" position={[0, 0, 0]} />
+          </Billboard>
+        );
+      })}
       {part?.fifo.map((rec, i) => {
         const b = boxFor(wh, rec.location);
         if (b) {

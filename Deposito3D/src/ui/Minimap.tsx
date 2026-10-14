@@ -21,7 +21,7 @@ export function Minimap() {
   const marks = useMemo(() => {
     const codes =
       selection?.kind === 'location' ? [selection.code]
-      : selection?.kind === 'part' ? index.byPart.get(selection.partNumber)?.fifo.map((r) => r.location) ?? []
+      : selection?.kind === 'part' ? (() => { const p = index.byPart.get(selection.partNumber); return p ? [...p.fifo, ...p.outside].map((r) => r.location) : []; })()
       : [];
     return codes
       .map((c) => {

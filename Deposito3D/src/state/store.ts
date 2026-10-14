@@ -44,7 +44,8 @@ interface AppState {
   focusSelection: () => void;
   walkTo: (code: string) => void;
   setView: (v: 'general' | 'planta') => void;
-  loadInventory: (inv: Inventory) => void;
+  /** Carga un inventario. Devuelve false si no se pudo guardar en la PC (demasiado grande). */
+  loadInventory: (inv: Inventory) => boolean;
   resetToDemo: () => void;
   registerCount: (code: string) => void;
 }
@@ -88,10 +89,11 @@ export const useStore = create<AppState>((set, get) => ({
   setView: (v) => get().flyTo(v === 'general' ? generalView(warehouse) : planView(warehouse)),
 
   loadInventory: (inventory) => {
-    storage.saveInventory(inventory);
+    const saved = storage.saveInventory(inventory);
     // Un inventario nuevo trae sus propias fechas de conteo: se descartan los conteos locales.
     storage.saveCounts({});
     set({ inventory, counts: {}, index: indexInventory(inventory, warehouse, {}), selection: null });
+    return saved;
   },
   resetToDemo: () => {
     storage.saveInventory(null);

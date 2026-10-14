@@ -93,9 +93,12 @@ export interface PartSummary {
   abc?: AbcClass;
   uom?: string;
   usedIn?: string;
+  /** Stock disponible (estanterías y recepción). */
   totalQty: number;
-  /** Registros ordenados FIFO (el más antiguo primero). */
+  /** Registros disponibles ordenados FIFO (el más antiguo primero). */
   fifo: StockRecord[];
+  /** Registros fuera del FIFO: ya entregados a WIP o en expedición. */
+  outside: StockRecord[];
 }
 
 export interface InventoryIndex {
@@ -126,11 +129,16 @@ export function indexInventory(
 
     let p = parts.get(r.partNumber);
     if (!p) {
-      p = { partNumber: r.partNumber, description: r.description, abc: r.abc, uom: r.uom, usedIn: r.usedIn, totalQty: 0, fifo: [] };
+      p = { partNumber: r.partNumber, description: r.description, abc: r.abc, uom: r.uom, usedIn: r.usedIn, totalQty: 0, fifo: [], outside: [] };
       parts.set(r.partNumber, p);
     }
-    p.totalQty += r.qty;
-    p.fifo.push(r);
+    const zoneKind = wh.zoneIndex.get(r.location)?.kind;
+    if (zoneKind === 'wip' || zoneKind === 'expedicion') {
+      p.outside.push(r);
+    } else {
+      p.totalQty += r.qty;
+      p.fifo.push(r);
+    }
     p.description ??= r.description;
     p.abc ??= r.abc;
     p.usedIn ??= r.usedIn;
@@ -158,9 +166,10 @@ export function indexInventory(
   return { today, byLocation, byPart: parts, unknown };
 }
 
-/** Posición FIFO de un registro dentro de su número de parte (1 = sale primero). */
+/** Posición FIFO de un registro dentro de su número de parte (1 = sale primero); null si está fuera del FIFO. */
 export function fifoRank(index: InventoryIndex, rec: StockRecord) {
   const p = index.byPart.get(rec.partNumber);
   if (!p) return { rank: 1, total: 1 };
-  return { rank: p.fifo.indexOf(rec) + 1, total: p.fifo.length };
+  const i = p.fifo.indexOf(rec);
+  return i < 0 ? null : { rank: i + 1, total: p.fifo.length };
 }

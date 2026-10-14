@@ -84,7 +84,7 @@ function partView(wh: Warehouse, index: InventoryIndex, pn: string): CameraKeyfr
   const p = index.byPart.get(pn);
   if (!p) return [];
   const pts: Vec3[] = [];
-  for (const r of p.fifo) {
+  for (const r of [...p.fifo, ...p.outside]) {
     const loc = wh.locationIndex.get(r.location);
     if (loc) pts.push(loc.position);
     const z = wh.zoneIndex.get(r.location);
