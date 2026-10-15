@@ -99,9 +99,18 @@ export function WalkControls() {
   const blocked = (x: number, z: number) => {
     const b = wh.bounds;
     if (x < b.minX + RADIUS || x > b.maxX - RADIUS || z < b.minZ + RADIUS || z > b.maxZ - RADIUS) return true;
-    // Pared izquierda: solo se cruza por los portones.
-    const wx = layout.wallX;
-    if (Math.abs(x - wx) < RADIUS + 0.1 && !layout.doors.some((d) => z > d.z0 + RADIUS && z < d.z1 - RADIUS)) return true;
+    // Paredes: solo se cruzan por los portones.
+    for (const w of layout.walls) {
+      const vertical = w.x0 === w.x1;
+      const near = vertical ? Math.abs(x - w.x0) < RADIUS + 0.1 : Math.abs(z - w.z0) < RADIUS + 0.1;
+      if (!near) continue;
+      const along = vertical ? z : x;
+      const lo = vertical ? Math.min(w.z0, w.z1) : Math.min(w.x0, w.x1);
+      const hi = vertical ? Math.max(w.z0, w.z1) : Math.max(w.x0, w.x1);
+      if (along < lo - RADIUS || along > hi + RADIUS) continue;
+      const inDoor = layout.doors.some((d) => d.wall === w.id && along > d.from + RADIUS && along < d.to - RADIUS);
+      if (!inDoor) return true;
+    }
     return wh.rows.some((r) => x > r.x0 - 0.2 - RADIUS && x < r.x1 + 0.2 + RADIUS && z > r.z0 - RADIUS && z < r.z1 + RADIUS);
   };
 

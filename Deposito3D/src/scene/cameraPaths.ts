@@ -13,12 +13,14 @@ export interface CameraKeyframe {
 
 const EYE = 1.65;
 
+/** Vista general desde atrás de la fila G (lado de la pared baja), mirando hacia la A. */
 export function generalView(wh: Warehouse): CameraKeyframe[] {
-  const { minX, maxX, minZ, maxZ, height } = wh.bounds;
-  const cx = (minX + maxX) / 2;
-  const cz = (minZ + maxZ) / 2;
-  const span = Math.max(maxX - minX, maxZ - minZ);
-  return [{ target: [cx, height * 0.2, cz], position: [cx + span * 0.55, span * 0.55, cz + span * 0.75] }];
+  const inn = layout.interior;
+  const cx = (inn.x0 + inn.x1) / 2;
+  const cz = (inn.z0 + inn.z1) / 2;
+  const span = inn.x1 - inn.x0;
+  void wh;
+  return [{ target: [cx, 1, cz + 1], position: [cx + span * 0.12, span * 0.62, inn.z0 - span * 0.55] }];
 }
 
 export function planView(wh: Warehouse): CameraKeyframe[] {
