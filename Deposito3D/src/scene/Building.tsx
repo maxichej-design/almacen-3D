@@ -1,3 +1,4 @@
+import { Edges } from '@react-three/drei';
 import { layout } from '../config/layout';
 import { useStore } from '../state/store';
 import { Label } from './Label';
@@ -6,17 +7,16 @@ import { SCENE } from './palette';
 const noRaycast = () => null;
 const LINE_W = 0.1;
 
-/** Piso, paredes, portones, demarcación y carteles fijos. */
+/** Piso, paredes, demarcación al pie de las filas, huecos vacíos y nombres de pasillos. */
 export function Building() {
   const wh = useStore((s) => s.warehouse);
-  const { minX, maxX, minZ, maxZ, height } = wh.bounds;
+  const { minX, maxX, minZ, maxZ } = wh.bounds;
   const w = maxX - minX;
   const d = maxZ - minZ;
   const cx = (minX + maxX) / 2;
   const cz = (minZ + maxZ) / 2;
   const H = layout.wallHeight;
-  const rowsEndX = wh.rows[0]?.x1 ?? 0;
-  const rowsStartX = wh.rows[0]?.x0 ?? 0;
+  const bay = layout.rack.bayWidth;
 
   return (
     <group>
@@ -26,7 +26,7 @@ export function Building() {
         <meshStandardMaterial color={SCENE.floor} roughness={0.35} metalness={0.05} />
       </mesh>
 
-      {/* Pared del fondo (detrás de las filas) y lateral con portones */}
+      {/* Paredes izquierda y superior del plano (las otras quedan abiertas para mirar) */}
       <mesh position={[minX - 0.1, H / 2, cz]} receiveShadow raycast={noRaycast}>
         <boxGeometry args={[0.2, H, d]} />
         <meshStandardMaterial color={SCENE.wall} roughness={0.9} />
@@ -35,72 +35,60 @@ export function Building() {
         <boxGeometry args={[w, H, 0.2]} />
         <meshStandardMaterial color={SCENE.wallSide} roughness={0.9} />
       </mesh>
-      {[3.5, 7.5].map((x) => (
-        <group key={x} position={[rowsEndX + x, 0, minZ + 0.01]}>
-          <mesh position={[0, 2.25, 0]} raycast={noRaycast}>
-            <boxGeometry args={[3.2, 4.5, 0.06]} />
-            <meshStandardMaterial color={SCENE.door} metalness={0.4} roughness={0.5} />
-          </mesh>
-          {Array.from({ length: 8 }, (_, i) => (
-            <mesh key={i} position={[0, 0.3 + i * 0.55, 0.035]} raycast={noRaycast}>
-              <boxGeometry args={[3.2, 0.03, 0.01]} />
-              <meshBasicMaterial color="#64748b" />
-            </mesh>
-          ))}
-          <Label text="PORTÓN" position={[0, 4.9, 0.05]} height={0.35} background="#0f172a" color="#facc15" />
-        </group>
-      ))}
 
-      {/* Demarcación de pasillos y nombre pintado en el piso */}
-      {wh.aisles.map((a) => {
-        const half = a.width / 2 - LINE_W / 2 - 0.02;
+      {wh.rows.map((r) => {
+        const front = r.facing === 1 ? r.z1 + 0.08 : r.z0 - 0.08;
+        const xa = r.x0 - r.emptyStart;
+        const xb = r.x1 + r.emptyEnd;
+        const empties = [
+          ...(r.emptyStart ? [r.x0 - r.emptyStart / 2] : []),
+          ...(r.emptyEnd ? [r.x1 + r.emptyEnd / 2] : []),
+        ];
         return (
-          <group key={a.id}>
-            {[-half, half].map((dz) => (
-              <mesh
-                key={dz}
-                rotation={[-Math.PI / 2, 0, 0]}
-                position={[(rowsStartX + rowsEndX) / 2 + 0.5, 0.004, a.centerZ + dz]}
-                raycast={noRaycast}
-              >
-                <planeGeometry args={[rowsEndX - rowsStartX + 1, LINE_W]} />
-                <meshBasicMaterial color={SCENE.floorLine} />
+          <group key={r.id}>
+            {/* Línea amarilla al pie del frente */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(xa + xb) / 2, 0.004, front]} raycast={noRaycast}>
+              <planeGeometry args={[xb - xa, LINE_W]} />
+              <meshBasicMaterial color={SCENE.floorLine} />
+            </mesh>
+            {/* Huecos sin estantería (cuadros vacíos del plano) */}
+            {empties.map((x) => (
+              <mesh key={x} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.006, (r.z0 + r.z1) / 2]} raycast={noRaycast}>
+                <planeGeometry args={[Math.min(bay / 2, 1.1), layout.rack.depth - 0.1]} />
+                <meshBasicMaterial color="#cbd5e1" />
+                <Edges color={SCENE.beam} />
               </mesh>
             ))}
-            <Label
-              text={`${a.name.toUpperCase()}  ${a.left} | ${a.right}`}
-              position={[rowsEndX + 1.4, 0.01, a.centerZ]}
-              rotation={[-Math.PI / 2, 0, Math.PI / 2]}
-              height={0.8}
-              color={SCENE.floorLine}
-              background="#475569"
-            />
-            {/* Matafuego al fondo del pasillo */}
-            <mesh position={[minX + 0.15, 1.2, a.centerZ + 0.8]} raycast={noRaycast}>
-              <cylinderGeometry args={[0.09, 0.09, 0.55, 16]} />
-              <meshStandardMaterial color="#dc2626" roughness={0.4} />
-            </mesh>
           </group>
         );
       })}
 
-      {/* Línea que separa la playa de las estanterías */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[rowsEndX + 0.6, 0.004, cz]} raycast={noRaycast}>
-        <planeGeometry args={[LINE_W * 1.5, d - 2]} />
-        <meshBasicMaterial color={SCENE.floorLine} />
-      </mesh>
-
-      {/* Letra de cada fila pintada en la pared del fondo */}
-      {wh.rows.map((r) => (
-        <Label
-          key={r.id}
-          text={r.id}
-          position={[minX + 0.02, height + 1.2, (r.z0 + r.z1) / 2]}
-          rotation={[0, Math.PI / 2, 0]}
-          height={1}
-          background="#ffffff"
-        />
-      ))}
+      {/* Nombre de cada pasillo pintado en el piso */}
+      {wh.aisles.map((a) =>
+        a.cross ? (
+          <Label
+            key={a.id}
+            text={a.name.toUpperCase()}
+            position={[(a.x0 + a.x1) / 2, 0.01, a.centerZ]}
+            rotation={[-Math.PI / 2, 0, Math.PI / 2]}
+            height={0.6}
+            color={SCENE.floorLine}
+            background="#475569"
+          />
+        ) : (
+          [a.x0 + 2.2, a.x1 - 2.2].map((x, i) => (
+            <Label
+              key={`${a.id}-${i}`}
+              text={a.name.toUpperCase()}
+              position={[x, 0.01, a.centerZ]}
+              rotation={[-Math.PI / 2, 0, i === 0 ? -Math.PI / 2 : Math.PI / 2]}
+              height={0.7}
+              color={SCENE.floorLine}
+              background="#475569"
+            />
+          ))
+        ),
+      )}
     </group>
   );
 }

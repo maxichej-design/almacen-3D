@@ -42,7 +42,7 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
     const uprights: BoxInstance[] = [];
     const beams: BoxInstance[] = [];
     const uh = top + 0.3;
-    for (let i = 0; i <= layout.modulesPerRow; i++) {
+    for (let i = 0; i <= row.modules; i++) {
       const x = row.x0 + i * dim.bayWidth;
       for (const z of [row.z0 + us / 2, row.z1 - us / 2]) uprights.push({ position: [x, uh / 2, z], scale: [us, uh, us] });
       for (const y of [0.35, uh * 0.5, uh - 0.2])
@@ -73,9 +73,9 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
 
   // Tira con los números de módulo, mirando al pasillo.
   const strip = useMemo(() => {
-    const items = Array.from({ length: layout.modulesPerRow }, (_, i) => {
+    const items = Array.from({ length: row.modules }, (_, i) => {
       const m = i + 1;
-      const x = row.x1 - (m - 0.5) * dim.bayWidth;
+      const x = row.x0 + (m - 0.5) * dim.bayWidth;
       const t = row.facing === 1 ? (x - row.x0) / length : (row.x1 - x) / length;
       return { t, text: `${row.id}${m}` };
     });
@@ -110,11 +110,18 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
         </mesh>
       ))}
 
-      {/* Letra de la fila en la cabecera (lado playa) */}
+      {/* Letra de la fila en ambas cabeceras */}
       <Label
         text={row.id}
         position={[row.x1 + 0.06, top + 0.75, (row.z0 + row.z1) / 2]}
         rotation={[0, Math.PI / 2, 0]}
+        height={0.85}
+        background="#ffffff"
+      />
+      <Label
+        text={row.id}
+        position={[row.x0 - 0.06, top + 0.75, (row.z0 + row.z1) / 2]}
+        rotation={[0, -Math.PI / 2, 0]}
         height={0.85}
         background="#ffffff"
       />
@@ -133,7 +140,7 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
             <Label
               key={i}
               text={`N${i + 1}`}
-              position={[row.x1 + 0.22, (i + 0.5) * dim.levelHeight, frontZ + row.facing * 0.03]}
+              position={[row.x0 - 0.22, (i + 0.5) * dim.levelHeight, frontZ + row.facing * 0.03]}
               rotation={[0, row.facing === 1 ? 0 : Math.PI, 0]}
               height={0.22}
               background="#f8fafc"

@@ -34,7 +34,9 @@ function locationView(wh: Warehouse, code: string): CameraKeyframe[] {
   const loc = wh.locationIndex.get(code);
   if (!loc) return [];
   const [x, y, z] = loc.position;
-  const dz = layout.rack.depth / 2 + layout.aisleWidth * 0.75;
+  const aisle = wh.aisles.find((a) => a.id === loc.aisleId);
+  const width = aisle ? aisle.z1 - aisle.z0 : 3;
+  const dz = layout.rack.depth / 2 + width * 0.7;
   return [{ target: [x, y, z], position: [x + 3.2, Math.max(EYE, y + 0.8), z + loc.facing * dz] }];
 }
 
@@ -45,17 +47,19 @@ function locationView(wh: Warehouse, code: string): CameraKeyframe[] {
 export function walkToLocation(wh: Warehouse, code: string): CameraKeyframe[] {
   const loc = wh.locationIndex.get(code);
   if (!loc) return [];
-  const aisle = wh.aisles.find((a) => a.id === loc.aisleId)!;
-  const row = wh.rowIndex.get(loc.rowId)!;
+  const aisle = wh.aisles.find((a) => a.id === loc.aisleId);
+  if (!aisle) return locationView(wh, code);
   const [x, y, z] = loc.position;
   const az = aisle.centerZ;
-  const entranceX = row.x1 + 3;
-  const standX = x + 2.8;
+  // Entra por la cabecera del pasillo más cercana a la ubicación.
+  const s = aisle.x1 - x < x - aisle.x0 ? 1 : -1;
+  const entranceX = s > 0 ? aisle.x1 - 1 : aisle.x0 + 1;
+  const standX = x + s * 2.8;
   const walkDist = Math.abs(entranceX - standX);
   return [
-    { position: [entranceX + 6, EYE + 2.5, az], target: [row.x1 - 6, EYE, az], duration: 1.6 },
-    { position: [entranceX, EYE, az], target: [row.x1 - 10, EYE, az], duration: 1.2 },
-    { position: [standX + 1.5, EYE, az], target: [x - 3, EYE, az], duration: Math.max(1, walkDist / 4.5) },
+    { position: [entranceX + s * 3, EYE + 2.5, az], target: [entranceX - s * 6, EYE, az], duration: 1.6 },
+    { position: [entranceX, EYE, az], target: [entranceX - s * 10, EYE, az], duration: 1.2 },
+    { position: [standX + s * 1.5, EYE, az], target: [x - s * 3, EYE, az], duration: Math.max(1, walkDist / 4.5) },
     // Se para del lado opuesto del pasillo para ver la ubicación completa.
     { position: [standX, EYE, az + loc.facing * 0.8], target: [x, y, z], duration: 1.1 },
   ];

@@ -28,10 +28,10 @@ export function WalkControls() {
     yaw.current = Math.atan2(-dir.x, -dir.z);
     pitch.current = 0;
     if (camera.position.y > EYE_HEIGHT + 0.5) {
-      // Si venía desde arriba, entra por la playa mirando hacia el primer pasillo.
+      // Si venía desde arriba, entra por la cabecera del primer pasillo mirando a lo largo.
       const a = wh.aisles[0];
-      camera.position.set((wh.rows[0]?.x1 ?? 0) + 4, EYE_HEIGHT, a.centerZ);
-      yaw.current = Math.PI / 2;
+      camera.position.set(a.x0 + 1.5, EYE_HEIGHT, a.centerZ);
+      yaw.current = -Math.PI / 2;
     }
     // Aplicar ya la orientación (el efecto puede ejecutarse dos veces en modo estricto).
     camera.rotation.set(0, yaw.current, 0, 'YXZ');

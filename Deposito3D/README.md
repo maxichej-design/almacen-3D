@@ -4,12 +4,14 @@ Gemelo digital del almacén: el stock visto en 3D, ubicación por ubicación, pa
 **inventario** tenga un control más fino (FIFO, conteo cíclico, obsoletos, ocupación).
 
 > Prototipo. Mientras no se cargue un reporte real, los datos son **de demostración**.
-> El layout (filas, módulos, niveles, zonas) es tentativo hasta tener el plano de ingeniería.
+> El layout sigue el plano de ingeniería; las letras de las filas, el sentido de numeración y la
+> ubicación de Recepción / WIP / Expedición están a confirmar.
 
 ## Qué hace
 
-- **Depósito 3D** con filas por letra (A–H), módulos y niveles. Códigos de ubicación tipo `C5.1`
-  (fila C, módulo 5, nivel 1 = piso). Zonas de piso: Recepción, **W0WIP** (armado), Expedición, F1, L1, Q1.
+- **Depósito 3D según el plano de ingeniería:** 7 filas (A–G; letras tentativas), módulos de 2 posiciones
+  de pallet y 6 niveles, 2 pasillos longitudinales + 1 transversal, sector Moldes. Códigos de ubicación tipo `C5.1`
+  (fila C, módulo 5, nivel 1 = piso). Zonas: Recepción, **W0WIP** (armado), Expedición, F1, L1, Q1 (posición a confirmar).
 - **Buscador único:** ubicación (`C5.1`), fila (`C`), zona (`W0WIP`) o número de parte / descripción.
 - **Ir caminando:** la cámara entra por la cabecera del pasillo y camina hasta la ubicación.
 - **Recorrer:** modo primera persona (W A S D / flechas, arrastrar para mirar, botones en pantalla).
@@ -62,7 +64,8 @@ src/
 
 ### Cambios habituales
 
-- **Layout real:** editar `src/config/layout.ts` (pasillos con su fila izquierda/derecha, módulos por fila, niveles, medidas y zonas).
+- **Layout:** editar `src/config/layout.ts` — cada fila con su letra, posición (x, z en metros desde la
+  esquina superior izquierda del plano), cantidad de módulos, hacia qué pasillo mira y huecos vacíos; pasillos y zonas como rectángulos.
 - **Frecuencias de conteo:** `src/config/policies.ts`.
 - **Conexión en línea (QAD) a futuro:** reemplazar `data/storage.ts` y la carga de `Inventory` por llamadas a un servidor;
   la escena y los paneles trabajan sobre el mismo modelo `StockRecord`.

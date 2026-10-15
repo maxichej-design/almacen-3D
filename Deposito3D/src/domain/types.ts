@@ -27,28 +27,35 @@ export interface RackRow {
   aisleId: string;
   aisleName: string;
   facing: 1 | -1;
-  /** Extremos en X (módulo 1 está en x1, del lado de la playa). */
+  /** Extremos en X de los módulos (módulo 1 en x0). */
   x0: number;
   x1: number;
   /** Borde trasero/delantero en Z. */
   z0: number;
   z1: number;
+  modules: number;
+  /** Huecos sin estantería en los extremos. */
+  emptyStart: number;
+  emptyEnd: number;
   locations: RackLocation[];
 }
 
 export interface Aisle {
   id: string;
   name: string;
+  x0: number;
+  x1: number;
+  z0: number;
+  z1: number;
+  /** Eje del pasillo (en Z) y si es transversal (corre en Z en vez de X). */
   centerZ: number;
-  width: number;
-  left: string;
-  right: string;
+  cross: boolean;
 }
 
 export interface Zone {
   code: string;
   name: string;
-  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso';
+  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes';
   /** Rectángulo en el mundo. */
   x0: number;
   z0: number;

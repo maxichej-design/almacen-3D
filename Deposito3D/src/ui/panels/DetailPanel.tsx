@@ -146,14 +146,15 @@ function RowDetail({ row }: { row: RackRow }) {
   const parts = new Set(sums.flatMap((s) => s?.records.map((r) => r.partNumber) ?? [])).size;
   const levels = Array.from({ length: layout.levels }, (_, i) => layout.levels - i);
   // Módulos de izquierda a derecha según se mira desde el pasillo.
-  const modules = Array.from({ length: layout.modulesPerRow }, (_, i) => (row.facing === 1 ? layout.modulesPerRow - i : i + 1));
+  // facing +1: se mira desde abajo del plano, el módulo 1 (x menor) queda a la izquierda.
+  const modules = Array.from({ length: row.modules }, (_, i) => (row.facing === 1 ? i + 1 : row.modules - i));
 
   return (
     <div className="pad">
       <Head kicker="Fila de estanterías" title={`Fila ${row.id}`} onClose={() => select(null)} />
       <dl className="grid">
         <dt>Pasillo</dt><dd>{row.aisleName}</dd>
-        <dt>Ubicaciones</dt><dd>{row.locations.length} ({layout.modulesPerRow} módulos × {layout.levels} niveles)</dd>
+        <dt>Ubicaciones</dt><dd>{row.locations.length} ({row.modules} módulos × {layout.levels} niveles)</dd>
         <dt>Ocupación</dt><dd>{occupied} ({fmtPct(occupied / row.locations.length)})</dd>
         <dt>Nº de parte</dt><dd>{parts}</dd>
         <dt>Conteos vencidos</dt><dd>{overdue}</dd>
