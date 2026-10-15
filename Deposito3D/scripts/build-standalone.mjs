@@ -20,3 +20,12 @@ if (/src="\/?assets\//.test(html) || /href="\/?assets\//.test(html)) {
 }
 writeFileSync('Deposito3D.html', html);
 console.log(`Deposito3D.html generado (${(html.length / 1024).toFixed(0)} kB)`);
+
+// Versión para publicar como página de claude.ai: el visor agrega doctype, <head> y <body>,
+// así que va solo el contenido (título, estilos, raíz y script).
+const title = /<title>.*?<\/title>/s.exec(html)[0];
+const styles = [...html.matchAll(/<style>[\s\S]*?<\/style>/g)].map((m) => m[0]).join('\n');
+const script = /<script type="module">[\s\S]*<\/script>/.exec(html)[0];
+const page = `${title}\n${styles}\n<div id="root"></div>\n${script}\n`;
+writeFileSync('Deposito3D-claude.html', page);
+console.log(`Deposito3D-claude.html generado (${(page.length / 1024).toFixed(0)} kB)`);

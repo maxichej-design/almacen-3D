@@ -26,6 +26,7 @@ export function DataPanel() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const rows: CellValue[][] = loaded?.sheets[sheetIdx]?.rows ?? [];
 
@@ -117,11 +118,24 @@ export function DataPanel() {
             {fmtNum(inventory.records.length)} registros · cargado el {formatDate(inventory.loadedAt)}
           </div>
         </div>
-        {inventory.source === 'import' && (
-          <button onClick={() => confirm('¿Volver a los datos de demostración? Se descarta el reporte cargado en esta PC.') && resetToDemo()}>
-            Volver a demo
-          </button>
-        )}
+        {inventory.source === 'import' &&
+          (confirmReset ? (
+            <span className="confirm">
+              <span className="small">¿Descartar el reporte cargado?</span>
+              <button
+                className="danger"
+                onClick={() => {
+                  resetToDemo();
+                  setConfirmReset(false);
+                }}
+              >
+                Sí, volver a demo
+              </button>
+              <button onClick={() => setConfirmReset(false)}>Cancelar</button>
+            </span>
+          ) : (
+            <button onClick={() => setConfirmReset(true)}>Volver a demo</button>
+          ))}
       </div>
 
       <h3>Actualizar con un reporte</h3>
