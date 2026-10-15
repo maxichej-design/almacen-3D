@@ -56,7 +56,7 @@ export function buildWarehouse(cfg: WarehouseLayout): Warehouse {
           size: [dim.bayWidth, dim.levelHeight, dim.depth],
           baseY: level === 1 ? 0 : bottom + dim.beamHeight / 2,
           facing: rc.facing,
-          bins: rc.binLevels?.includes(level) || undefined,
+          crate: rc.crateLevels?.includes(level) || undefined,
           index: locations.length,
         };
         row.locations.push(loc);

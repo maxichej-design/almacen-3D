@@ -103,7 +103,7 @@ export function Building() {
                 <meshStandardMaterial color="#facc15" roughness={0.6} />
               </mesh>
             ))}
-            <Label text="PORTÓN" position={labelPos} rotation={labelRot} height={0.4} background="#0f172a" color="#facc15" />
+            <Label text={dr.name.toUpperCase()} position={labelPos} rotation={labelRot} height={0.4} background="#0f172a" color="#facc15" />
           </group>
         );
       })}

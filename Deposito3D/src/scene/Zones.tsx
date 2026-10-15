@@ -5,7 +5,7 @@ import { useStore } from '../state/store';
 import { Label } from './Label';
 import { SCENE, tintFor } from './palette';
 import { DRAG_PX } from './Racks';
-import { cartonTexture } from './textures';
+import { cartonTexture, crateTexture } from './textures';
 
 export const ZONE_COLORS: Record<Zone['kind'], string> = {
   recepcion: '#0ea5e9',
@@ -14,6 +14,7 @@ export const ZONE_COLORS: Record<Zone['kind'], string> = {
   piso: '#64748b',
   moldes: '#78716c',
   servicio: '#0f766e',
+  bin: '#15803d',
 };
 
 const noRaycast = () => null;
@@ -97,6 +98,12 @@ const ZoneArea = memo(function ZoneArea({ zone }: { zone: Zone }) {
         background={color}
         color="#ffffff"
       />
+      {zone.kind === 'bin' && (
+        <mesh position={[cx, 0.42, cz]} castShadow raycast={noRaycast}>
+          <boxGeometry args={[zone.w - 0.05, 0.84, zone.d - 0.05]} />
+          <meshStandardMaterial color={SCENE.crate} map={crateTexture()} roughness={0.7} />
+        </mesh>
+      )}
       {zone.inRack && (
         // Cartel colgante, como el de planta: "UBICACIÓN W0-WIP".
         <group position={[cx, 3.1, zone.z0 + 0.05]}>

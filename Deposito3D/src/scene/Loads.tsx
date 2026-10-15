@@ -44,11 +44,6 @@ export function Loads() {
     for (const loc of wh.locations) {
       const sum = index.byLocation.get(loc.code);
       const [x, , z] = loc.position;
-      if (loc.bins) {
-        // Bines de residuos: siempre dos cajones verdes en el piso.
-        for (const dx of [0.66, -0.66]) g.cajon.push({ position: [x + dx, CRATE.h / 2, z], scale: [CRATE.w, CRATE.h, CRATE.d], color: SCENE.crate });
-        continue;
-      }
       if (!sum) {
         if (mode === 'ocupacion') {
           g.free.push({ position: [x, loc.baseY + 0.07, z], scale: [dim.bayWidth - 0.3, 0.02, dim.depth - 0.15] });
@@ -59,7 +54,7 @@ export function Loads() {
       const pallets = sum.records.length > 1 || hash(loc.code) > 0.4 ? 2 : 1;
       for (let i = 0; i < pallets; i++) {
         const rec = sum.records[i % sum.records.length];
-        const kind = kindFor(rec.partNumber, loc.level);
+        const kind = loc.crate ? 'cajon' : kindFor(rec.partNumber, loc.level);
         const px = pallets === 1 ? x : x + (i === 0 ? 0.66 : -0.66);
         if (kind === 'cajon') {
           g.cajon.push({ position: [px, CRATE.h / 2, z], scale: [CRATE.w, CRATE.h, CRATE.d], color: tint ?? SCENE.crate });

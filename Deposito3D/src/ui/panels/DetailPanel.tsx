@@ -82,9 +82,7 @@ function LocationDetail({ code }: { code: string }) {
     <div className="pad">
       <Head kicker="Ubicación" title={code} onClose={() => select(null)} />
       <div className="badges">
-        {loc.bins ? (
-          <span className="badge" style={{ background: '#15803d' }}>Bines de residuos</span>
-        ) : summary ? (
+        {summary ? (
           <>
             {summary.abc && (
               <span className="badge" style={{ background: ABC_COLORS[summary.abc] }}>
@@ -212,6 +210,9 @@ function ZoneDetail({ zone }: { zone: Zone }) {
         <span className="badge" style={{ background: ZONE_COLORS[zone.kind] }}>{zone.name}</span>
         <CountBadge summary={summary} />
       </div>
+      {zone.kind === 'bin' && (
+        <p className="note">Bin del hall de entrada para descartes (film o cartón de las cajas abiertas). No es stock.</p>
+      )}
       {zone.kind === 'wip' && (
         <p className="note">
           Material entregado al armado (WIP). En planta está en la estantería E, módulos 1 y 2, con el cartel "UBICACIÓN W0-WIP".

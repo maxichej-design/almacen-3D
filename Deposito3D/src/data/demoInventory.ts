@@ -89,14 +89,13 @@ export function buildDemoInventory(wh: Warehouse): Inventory {
   };
 
   for (const loc of wh.locations) {
-    if (loc.bins) continue; // bines de residuos: no son stock
     if (rnd() > 0.72) continue;
     const n = rnd() < 0.78 ? 1 : rnd() < 0.85 ? 2 : 3;
     for (let i = 0; i < n; i++) records.push(makeRecord(loc.code, pick(weighted)));
   }
   const zoneFill: Record<string, number> = { W0WIP: 12, REC: 9, EXP: 6, F1: 2, L1: 3, Q1: 2 };
   for (const z of wh.zones) {
-    if (z.kind === 'servicio') continue; // compu, bines, etc.: no guardan stock
+    if (z.kind === 'servicio' || z.kind === 'bin') continue; // compu, bines de residuos: no guardan stock
     for (let i = 0; i < (zoneFill[z.code] ?? 2); i++) {
       records.push(makeRecord(z.code, pick(weighted), { fresh: z.kind === 'recepcion' }));
     }

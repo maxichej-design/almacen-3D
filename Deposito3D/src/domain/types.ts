@@ -17,8 +17,8 @@ export interface RackLocation {
   baseY: number;
   /** Hacia dónde mira el frente (+1 / -1 en Z). */
   facing: 1 | -1;
-  /** Ocupada por bines de residuos: no es stock. */
-  bins?: boolean;
+  /** La mercadería de este nivel va en cajones verdes (dibujo). */
+  crate?: boolean;
   /** Índice dentro de Warehouse.locations (para dibujado instanciado). */
   index: number;
 }
@@ -59,7 +59,7 @@ export interface Aisle {
 export interface Zone {
   code: string;
   name: string;
-  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio';
+  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio' | 'bin';
   inRack?: boolean;
   /** Rectángulo en el mundo. */
   x0: number;

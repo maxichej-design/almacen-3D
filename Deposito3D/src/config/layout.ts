@@ -32,8 +32,8 @@ export interface RowConfig {
   emptyStart?: number;
   /** Dónde está el módulo 1: 'inicio' = x menor (izquierda del plano), 'fin' = x mayor. */
   module1?: 'inicio' | 'fin';
-  /** Niveles ocupados por bines de residuos (no son stock), p. ej. [1]. */
-  binLevels?: number[];
+  /** Niveles donde la mercadería va en cajones plásticos verdes (solo cambia el dibujo). */
+  crateLevels?: number[];
   emptyEnd?: number;
 }
 
@@ -51,7 +51,7 @@ export interface ZoneConfig {
   /** Código tal como aparece en el sistema, p. ej. "W0WIP". */
   code: string;
   name: string;
-  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio';
+  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio' | 'bin';
   /** La ubicación está en la estantería (cartel colgante); en el piso solo se marca. */
   inRack?: boolean;
   x: number;
@@ -115,11 +115,11 @@ export const layout: WarehouseLayout = {
     { id: 'E', aisle: '2', x: 3.15, z: 5.9 + DEPTH + 0.2, modules: 11, facing: 1, emptyStart: EMPTY, module1: 'fin' },
     // Fila larga de abajo (cruza los dos bloques)
     { id: 'A', aisle: '2', x: 3.15, z: 12.6, modules: 17, facing: -1, emptyStart: EMPTY, emptyEnd: EMPTY },
-    // Bloque derecho: 5 módulos, el 1 del lado del pasillo transversal
-    { id: 'D', aisle: '1', x: 36.75, z: 0.8, modules: 5, facing: 1 },
-    { id: 'C', aisle: '1', x: 36.75, z: 5.9, modules: 5, facing: -1 },
-    // Fila B: en el nivel 1 (piso) están los cajones verdes de residuos (video 15/10).
-    { id: 'B', aisle: '2', x: 36.75, z: 5.9 + DEPTH + 0.2, modules: 5, facing: 1, binLevels: [1] },
+    // Bloque derecho: 5 módulos, el 1 del lado de la pared y el 5 hacia el hall de entrada.
+    { id: 'D', aisle: '1', x: 36.75, z: 0.8, modules: 5, facing: 1, module1: 'fin' },
+    { id: 'C', aisle: '1', x: 36.75, z: 5.9, modules: 5, facing: -1, module1: 'fin' },
+    // Fila B: en el piso la mercadería va en cajones verdes (video 15/10).
+    { id: 'B', aisle: '2', x: 36.75, z: 5.9 + DEPTH + 0.2, modules: 5, facing: 1, module1: 'fin', crateLevels: [1] },
   ],
 
   aisles: [
@@ -138,9 +138,10 @@ export const layout: WarehouseLayout = {
     { id: 'frente', x0: 0, z0: -0.3, x1: 50.35, z1: -0.3, height: 0.6, cut: true },
   ],
   doors: [
-    { name: 'Portón pasillo 1', wall: 'izquierda', from: 1.9, to: 5.9 },
-    { name: 'Portón pasillo 2', wall: 'izquierda', from: 8.3, to: 12.6 },
-    { name: 'Portón junto a la computadora', wall: 'frente', from: 33.0, to: 36.75 },
+    { name: 'Recepción 1', wall: 'izquierda', from: 1.9, to: 5.9 },
+    { name: 'Recepción 2', wall: 'izquierda', from: 8.3, to: 12.6 },
+    // La entrada principal está en el medio: da al hall (pasillo transversal), junto a la compu.
+    { name: 'Entrada', wall: 'frente', from: 33.0, to: 36.75 },
   ],
 
   building: { x0: -10, x1: 65, z0: -5, z1: 15 },
@@ -149,9 +150,13 @@ export const layout: WarehouseLayout = {
   // Moldes según el plano; las demás zonas aún no figuran en el plano: posición provisoria (playa a la derecha).
   zones: [
     { code: 'MOLDES', name: 'Moldes', kind: 'moldes', x: 36.5, z: -4.6, w: 14.5, d: 3.6 },
-    // Stages de descarga (mercadería pre-ingreso), afuera, frente a cada portón (escrito "AL.9C" en el plano).
-    { code: 'AL.9C', name: 'Stage 1 · descarga pre-ingreso', kind: 'recepcion', x: -9.5, z: 1.9, w: 9.2, d: 4.0 },
-    { code: 'AL.9C-2', name: 'Stage 2 · descarga pre-ingreso', kind: 'recepcion', x: -9.5, z: 8.3, w: 9.2, d: 4.3 },
+    // Recepción: stages afuera de los portones del fondo; llegan los pallets, se cuentan y se ingresan
+    // (escrito "AL.9C" en el plano).
+    { code: 'AL.9C', name: 'Recepción 1 · stage pre-ingreso', kind: 'recepcion', x: -9.5, z: 1.9, w: 9.2, d: 4.0 },
+    { code: 'AL.9C-2', name: 'Recepción 2 · stage pre-ingreso', kind: 'recepcion', x: -9.5, z: 8.3, w: 9.2, d: 4.3 },
+    // Bines del hall de entrada, al pie de la cabecera C | B: uno para film/plástico y otro para cartón.
+    { code: 'BIN-FILM', name: 'Bin de film / plástico', kind: 'bin', x: 35.4, z: 5.95, w: 1.2, d: 0.95 },
+    { code: 'BIN-CARTON', name: 'Bin de cartón', kind: 'bin', x: 35.4, z: 7.3, w: 1.2, d: 0.95 },
     { code: 'PC', name: 'Puesto de computadora', kind: 'servicio', x: 31.6, z: 0.2, w: 1.2, d: 1.1 },
     // Aún sin ubicar en el plano: quedan afuera, a la derecha, hasta saber dónde van.
     // W0-WIP: cartel "UBICACIÓN W0-WIP" sobre los módulos E1–E2 (video 15/10); se marca en el piso del pasillo.
