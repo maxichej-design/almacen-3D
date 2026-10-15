@@ -93,7 +93,7 @@ select, input { font: inherit; }
 .mm-row.sel { fill: #a5f3fc; stroke: #0891b2; stroke-width: .6; }
 .mm-occ { fill: #2a78d6; opacity: .55; pointer-events: none; }
 .mm-label { font-size: 1.6px; font-weight: 700; fill: #0f172a; dominant-baseline: middle; pointer-events: none; }
-.mm-mark { fill: #d946ef; stroke: #fff; stroke-width: .3; }
+.mm-mark { fill: #d946ef; stroke: #fff; stroke-width: .3; pointer-events: none; }
 .mm-hit { cursor: pointer; }
 
 /* Modo recorrido */
