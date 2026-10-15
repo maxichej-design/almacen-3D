@@ -27,6 +27,10 @@ Gemelo digital del almacén: el stock visto en 3D, ubicación por ubicación, pa
 
 ## Cómo abrirlo
 
+**Página en claude.ai (versión de referencia):** https://claude.ai/artifact/LfrQT1MS3Enxu5J8f54ggU
+Siempre se actualiza ESTA misma página (no crear otra): `npm run build:standalone` genera
+`Deposito3D-claude.html`, que se publica sobre ese link.
+
 **Sin instalar nada:** abrir `Deposito3D.html` con doble clic (Chrome o Edge).
 Se genera con `npm run build:standalone`.
 
