@@ -6,33 +6,70 @@ import { SCENE } from './palette';
 
 const noRaycast = () => null;
 const LINE_W = 0.1;
+const DOOR_H = 4.5;
 
 /** Piso, paredes, demarcación al pie de las filas, huecos vacíos y nombres de pasillos. */
 export function Building() {
   const wh = useStore((s) => s.warehouse);
   const { minX, maxX, minZ, maxZ } = wh.bounds;
-  const w = maxX - minX;
   const d = maxZ - minZ;
-  const cx = (minX + maxX) / 2;
   const cz = (minZ + maxZ) / 2;
   const H = layout.wallHeight;
   const bay = layout.rack.bayWidth;
+  const wallX = layout.wallX;
+  // Tramos de pared entre portones.
+  const wallSegments: Array<[number, number]> = [];
+  let zPrev = minZ;
+  for (const dr of [...layout.doors].sort((a, b) => a.z0 - b.z0)) {
+    wallSegments.push([zPrev, dr.z0]);
+    zPrev = dr.z1;
+  }
+  wallSegments.push([zPrev, maxZ]);
 
   return (
     <group>
-      {/* Piso epoxi */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0, cz]} receiveShadow raycast={noRaycast}>
-        <planeGeometry args={[w, d]} />
+      {/* Piso epoxi (adentro) y piso exterior, del otro lado de la pared izquierda */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(wallX + maxX) / 2, 0, cz]} receiveShadow raycast={noRaycast}>
+        <planeGeometry args={[maxX - wallX, d]} />
         <meshStandardMaterial color={SCENE.floor} roughness={0.35} metalness={0.05} />
       </mesh>
+      {minX < wallX && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(minX + wallX) / 2, -0.01, cz]} receiveShadow raycast={noRaycast}>
+          <planeGeometry args={[wallX - minX, d]} />
+          <meshStandardMaterial color="#b8bcc2" roughness={0.9} />
+        </mesh>
+      )}
 
-      {/* Paredes izquierda y superior del plano (las otras quedan abiertas para mirar) */}
-      <mesh position={[minX - 0.1, H / 2, cz]} receiveShadow raycast={noRaycast}>
-        <boxGeometry args={[0.2, H, d]} />
-        <meshStandardMaterial color={SCENE.wall} roughness={0.9} />
-      </mesh>
-      <mesh position={[cx, H / 2, minZ - 0.1]} receiveShadow raycast={noRaycast}>
-        <boxGeometry args={[w, H, 0.2]} />
+      {/* Pared izquierda con portones y pared superior (las otras quedan abiertas para mirar) */}
+      {wallSegments.map(([za, zb]) => (
+        <mesh key={za} position={[wallX - 0.1, H / 2, (za + zb) / 2]} receiveShadow raycast={noRaycast}>
+          <boxGeometry args={[0.2, H, zb - za]} />
+          <meshStandardMaterial color={SCENE.wall} roughness={0.9} />
+        </mesh>
+      ))}
+      {layout.doors.map((dr) => (
+        <group key={dr.name}>
+          {/* Dintel con el portón enrollado arriba */}
+          <mesh position={[wallX - 0.1, (DOOR_H + H) / 2, (dr.z0 + dr.z1) / 2]} raycast={noRaycast}>
+            <boxGeometry args={[0.2, H - DOOR_H, dr.z1 - dr.z0]} />
+            <meshStandardMaterial color={SCENE.wall} roughness={0.9} />
+          </mesh>
+          <mesh position={[wallX - 0.1, DOOR_H + 0.25, (dr.z0 + dr.z1) / 2]} raycast={noRaycast}>
+            <boxGeometry args={[0.5, 0.5, dr.z1 - dr.z0]} />
+            <meshStandardMaterial color={SCENE.door} metalness={0.4} roughness={0.5} />
+          </mesh>
+          {/* Parantes amarillos */}
+          {[dr.z0, dr.z1].map((z) => (
+            <mesh key={z} position={[wallX - 0.1, DOOR_H / 2, z]} raycast={noRaycast}>
+              <boxGeometry args={[0.3, DOOR_H, 0.15]} />
+              <meshStandardMaterial color="#facc15" roughness={0.6} />
+            </mesh>
+          ))}
+          <Label text="PORTÓN" position={[wallX + 0.02, DOOR_H + 0.75, (dr.z0 + dr.z1) / 2]} rotation={[0, Math.PI / 2, 0]} height={0.4} background="#0f172a" color="#facc15" />
+        </group>
+      ))}
+      <mesh position={[(wallX + maxX) / 2, H / 2, minZ - 0.1]} receiveShadow raycast={noRaycast}>
+        <boxGeometry args={[maxX - wallX, H, 0.2]} />
         <meshStandardMaterial color={SCENE.wallSide} roughness={0.9} />
       </mesh>
 

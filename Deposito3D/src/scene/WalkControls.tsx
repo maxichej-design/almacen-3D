@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { layout } from '../config/layout';
 import { useStore } from '../state/store';
 import { walkInput } from './walkInput';
 
@@ -98,6 +99,9 @@ export function WalkControls() {
   const blocked = (x: number, z: number) => {
     const b = wh.bounds;
     if (x < b.minX + RADIUS || x > b.maxX - RADIUS || z < b.minZ + RADIUS || z > b.maxZ - RADIUS) return true;
+    // Pared izquierda: solo se cruza por los portones.
+    const wx = layout.wallX;
+    if (Math.abs(x - wx) < RADIUS + 0.1 && !layout.doors.some((d) => z > d.z0 + RADIUS && z < d.z1 - RADIUS)) return true;
     return wh.rows.some((r) => x > r.x0 - 0.2 - RADIUS && x < r.x1 + 0.2 + RADIUS && z > r.z0 - RADIUS && z < r.z1 + RADIUS);
   };
 

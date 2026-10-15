@@ -8,14 +8,14 @@ NAVY = HexColor('#14213D'); ORANGE = HexColor('#EA580C'); GRAY = HexColor('#9CA3
 LIGHT = HexColor('#F3F4F6'); MID = HexColor('#6B7280'); YEL = HexColor('#CA8A04')
 
 BAY, DEPTH, EMPTY = 2.7, 1.1, 1.2
-ROWS = [  # id, x, z, modules, facing, emptyStart, emptyEnd
- ('A', 3.15, 0.2, 10, 1, EMPTY, EMPTY),
- ('B', 3.15, 5.9, 11, -1, EMPTY, 0),
- ('C', 3.15, 7.2, 11, 1, EMPTY, 0),
- ('D', 3.15, 12.6, 17, -1, EMPTY, EMPTY),
- ('E', 38.1, 0.8, 4, 1, 0, EMPTY),
- ('F', 38.1, 5.9, 4, -1, 0, EMPTY),
- ('G', 38.1, 7.2, 4, 1, 0, EMPTY),
+ROWS = [  # id, x, z, modules, facing, emptyStart, emptyEnd  (nombres del plano completado el 15/10/2026)
+ ('G', 3.15, 0.2, 10, 1, EMPTY, EMPTY),
+ ('F', 3.15, 5.9, 11, -1, EMPTY, 0),
+ ('E', 3.15, 7.2, 11, 1, EMPTY, 0),
+ ('A', 3.15, 12.6, 17, -1, EMPTY, EMPTY),
+ ('D', 38.1, 0.8, 5, 1, 0, 0),
+ ('C', 38.1, 5.9, 5, -1, 0, 0),
+ ('B', 38.1, 7.2, 5, 1, 0, 0),
 ]
 # Escala esquemática: X real, Z ampliada para tener lugar donde escribir.
 X0, Z0 = -10.0, -5.5

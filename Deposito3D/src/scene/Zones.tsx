@@ -13,6 +13,7 @@ export const ZONE_COLORS: Record<Zone['kind'], string> = {
   expedicion: '#f97316',
   piso: '#64748b',
   moldes: '#78716c',
+  servicio: '#0f766e',
 };
 
 const noRaycast = () => null;

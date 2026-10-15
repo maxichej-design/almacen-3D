@@ -95,6 +95,7 @@ export function buildDemoInventory(wh: Warehouse): Inventory {
   }
   const zoneFill: Record<string, number> = { W0WIP: 12, REC: 9, EXP: 6, F1: 2, L1: 3, Q1: 2 };
   for (const z of wh.zones) {
+    if (z.kind === 'servicio') continue; // compu, bines, etc.: no guardan stock
     for (let i = 0; i < (zoneFill[z.code] ?? 2); i++) {
       records.push(makeRecord(z.code, pick(weighted), { fresh: z.kind === 'recepcion' }));
     }

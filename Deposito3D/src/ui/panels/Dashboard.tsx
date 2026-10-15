@@ -29,7 +29,7 @@ export function Dashboard() {
     }
     const abcParts: Record<AbcClass, number> = { A: 0, B: 0, C: 0, D: 0 };
     for (const p of index.byPart.values()) if (p.abc) abcParts[p.abc]++;
-    const rows = wh.rows.map((r) => {
+    const rows = [...wh.rows].sort((a, b) => a.id.localeCompare(b.id)).map((r) => {
       const occ = r.locations.filter((l) => index.byLocation.has(l.code)).length;
       return { id: r.id, occ, pct: occ / r.locations.length };
     });
