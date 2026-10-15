@@ -51,6 +51,7 @@ const ZoneArea = memo(function ZoneArea({ zone }: { zone: Zone }) {
 
   // Bultos dentro de la zona, en grilla.
   const boxes = useMemo(() => {
+    if (zone.inRack) return []; // la mercadería está en la estantería, no en el piso
     const recs = summary?.records ?? [];
     const cols = Math.max(1, Math.floor((zone.w - 0.6) / 1.4));
     const rowsMax = Math.max(1, Math.floor((zone.d - 0.6) / 1.2));
@@ -96,6 +97,23 @@ const ZoneArea = memo(function ZoneArea({ zone }: { zone: Zone }) {
         background={color}
         color="#ffffff"
       />
+      {zone.inRack && (
+        // Cartel colgante, como el de planta: "UBICACIÓN W0-WIP".
+        <group position={[cx, 3.1, zone.z0 + 0.05]}>
+          <mesh position={[-0.5, 0.55, 0]} raycast={noRaycast}>
+            <boxGeometry args={[0.01, 1.1, 0.01]} />
+            <meshBasicMaterial color="#334155" />
+          </mesh>
+          <mesh position={[0.5, 0.55, 0]} raycast={noRaycast}>
+            <boxGeometry args={[0.01, 1.1, 0.01]} />
+            <meshBasicMaterial color="#334155" />
+          </mesh>
+          <Label text="UBICACIÓN" position={[0, 0.18, 0.01]} rotation={[0, Math.PI, 0]} height={0.3} background="#ffffff" />
+          <Label text={zone.code === 'W0WIP' ? 'W0-WIP' : zone.code} position={[0, -0.14, 0.01]} rotation={[0, Math.PI, 0]} height={0.34} background="#ffffff" color="#b42318" />
+          <Label text="UBICACIÓN" position={[0, 0.18, -0.01]} height={0.3} background="#ffffff" />
+          <Label text={zone.code === 'W0WIP' ? 'W0-WIP' : zone.code} position={[0, -0.14, -0.01]} height={0.34} background="#ffffff" color="#b42318" />
+        </group>
+      )}
       {boxes.map((b) => (
         <mesh key={b.key} position={b.position} castShadow receiveShadow raycast={noRaycast}>
           <boxGeometry args={b.size} />

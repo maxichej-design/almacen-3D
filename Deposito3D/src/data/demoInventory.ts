@@ -89,6 +89,7 @@ export function buildDemoInventory(wh: Warehouse): Inventory {
   };
 
   for (const loc of wh.locations) {
+    if (loc.bins) continue; // bines de residuos: no son stock
     if (rnd() > 0.72) continue;
     const n = rnd() < 0.78 ? 1 : rnd() < 0.85 ? 2 : 3;
     for (let i = 0; i < n; i++) records.push(makeRecord(loc.code, pick(weighted)));

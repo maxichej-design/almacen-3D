@@ -17,6 +17,8 @@ export interface RackLocation {
   baseY: number;
   /** Hacia dónde mira el frente (+1 / -1 en Z). */
   facing: 1 | -1;
+  /** Ocupada por bines de residuos: no es stock. */
+  bins?: boolean;
   /** Índice dentro de Warehouse.locations (para dibujado instanciado). */
   index: number;
 }
@@ -34,6 +36,8 @@ export interface RackRow {
   z0: number;
   z1: number;
   modules: number;
+  /** El módulo 1 está en x1 (fin) en vez de x0. */
+  module1AtEnd: boolean;
   /** Huecos sin estantería en los extremos. */
   emptyStart: number;
   emptyEnd: number;
@@ -56,6 +60,7 @@ export interface Zone {
   code: string;
   name: string;
   kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio';
+  inRack?: boolean;
   /** Rectángulo en el mundo. */
   x0: number;
   z0: number;

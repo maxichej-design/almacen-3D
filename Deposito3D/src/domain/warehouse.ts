@@ -34,6 +34,7 @@ export function buildWarehouse(cfg: WarehouseLayout): Warehouse {
       z0: rc.z,
       z1: rc.z + dim.depth,
       modules: rc.modules,
+      module1AtEnd: rc.module1 === 'fin',
       emptyStart: rc.emptyStart ?? 0,
       emptyEnd: rc.emptyEnd ?? 0,
       locations: [],
@@ -47,10 +48,15 @@ export function buildWarehouse(cfg: WarehouseLayout): Warehouse {
           aisleId: rc.aisle,
           module,
           level,
-          position: [x0 + (module - 0.5) * dim.bayWidth, bottom + dim.levelHeight / 2, rc.z + dim.depth / 2],
+          position: [
+            rc.module1 === 'fin' ? x1 - (module - 0.5) * dim.bayWidth : x0 + (module - 0.5) * dim.bayWidth,
+            bottom + dim.levelHeight / 2,
+            rc.z + dim.depth / 2,
+          ],
           size: [dim.bayWidth, dim.levelHeight, dim.depth],
           baseY: level === 1 ? 0 : bottom + dim.beamHeight / 2,
           facing: rc.facing,
+          bins: rc.binLevels?.includes(level) || undefined,
           index: locations.length,
         };
         row.locations.push(loc);
@@ -70,6 +76,7 @@ export function buildWarehouse(cfg: WarehouseLayout): Warehouse {
     code: zc.code,
     name: zc.name,
     kind: zc.kind,
+    inRack: zc.inRack,
     x0: zc.x,
     z0: zc.z,
     w: zc.w,

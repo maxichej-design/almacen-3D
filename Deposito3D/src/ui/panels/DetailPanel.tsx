@@ -82,7 +82,9 @@ function LocationDetail({ code }: { code: string }) {
     <div className="pad">
       <Head kicker="Ubicación" title={code} onClose={() => select(null)} />
       <div className="badges">
-        {summary ? (
+        {loc.bins ? (
+          <span className="badge" style={{ background: '#15803d' }}>Bines de residuos</span>
+        ) : summary ? (
           <>
             {summary.abc && (
               <span className="badge" style={{ background: ABC_COLORS[summary.abc] }}>
@@ -147,7 +149,10 @@ function RowDetail({ row }: { row: RackRow }) {
   const levels = Array.from({ length: layout.levels }, (_, i) => layout.levels - i);
   // Módulos de izquierda a derecha según se mira desde el pasillo.
   // facing +1: se mira desde abajo del plano, el módulo 1 (x menor) queda a la izquierda.
-  const modules = Array.from({ length: row.modules }, (_, i) => (row.facing === 1 ? i + 1 : row.modules - i));
+  const byX = Array.from({ length: row.modules }, (_, i) => i + 1).sort(
+    (a, b) => (row.locations[(a - 1) * layout.levels].position[0]) - (row.locations[(b - 1) * layout.levels].position[0]),
+  );
+  const modules = row.facing === 1 ? byX : byX.reverse();
 
   return (
     <div className="pad">
@@ -208,7 +213,9 @@ function ZoneDetail({ zone }: { zone: Zone }) {
         <CountBadge summary={summary} />
       </div>
       {zone.kind === 'wip' && (
-        <p className="note">Material que salió del almacén hacia el armado (WIP). Ya no está en estantería.</p>
+        <p className="note">
+          Material entregado al armado (WIP). En planta está en la estantería E, módulos 1 y 2, con el cartel "UBICACIÓN W0-WIP".
+        </p>
       )}
       <dl className="grid">
         <dt>Registros</dt><dd>{summary?.records.length ?? 0}</dd>

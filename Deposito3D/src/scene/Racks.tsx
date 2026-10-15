@@ -75,7 +75,7 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
   const strip = useMemo(() => {
     const items = Array.from({ length: row.modules }, (_, i) => {
       const m = i + 1;
-      const x = row.x0 + (m - 0.5) * dim.bayWidth;
+      const x = row.module1AtEnd ? row.x1 - (m - 0.5) * dim.bayWidth : row.x0 + (m - 0.5) * dim.bayWidth;
       const t = row.facing === 1 ? (x - row.x0) / length : (row.x1 - x) / length;
       return { t, text: `${row.id}${m}` };
     });
@@ -140,7 +140,7 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
             <Label
               key={i}
               text={`N${i + 1}`}
-              position={[row.x0 - 0.22, (i + 0.5) * dim.levelHeight, frontZ + row.facing * 0.03]}
+              position={[row.module1AtEnd ? row.x1 + 0.22 : row.x0 - 0.22, (i + 0.5) * dim.levelHeight, frontZ + row.facing * 0.03]}
               rotation={[0, row.facing === 1 ? 0 : Math.PI, 0]}
               height={0.22}
               background="#f8fafc"
