@@ -23,7 +23,7 @@ export function buildWarehouse(cfg: WarehouseLayout): Warehouse {
   const rows: RackRow[] = cfg.rows.map((rc) => {
     const x0 = rc.x;
     // Ancho de cada módulo (el 1 puede ser medio módulo).
-    const widths = Array.from({ length: rc.modules }, (_, i) => (i === 0 && rc.halfModule1 ? dim.bayWidth / 2 : dim.bayWidth));
+    const widths = Array.from({ length: rc.modules }, (_, i) => ((i === 0 && rc.halfModule1) || (i === rc.modules - 1 && rc.halfModuleLast) ? dim.bayWidth / 2 : dim.bayWidth));
     const x1 = rc.x + widths.reduce((a, b) => a + b, 0);
     const atEnd = rc.module1 === 'fin';
     // Tramo [a, b] de cada módulo, contando desde la punta del módulo 1.

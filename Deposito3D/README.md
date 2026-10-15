@@ -9,8 +9,9 @@ Gemelo digital del almacén: el stock visto en 3D, ubicación por ubicación, pa
 
 ## Qué hace
 
-- **Depósito 3D según el plano de ingeniería:** 7 filas (A–G; letras tentativas), módulos de 2 posiciones
-  de pallet y 6 niveles, 2 pasillos longitudinales + 1 transversal, sector Moldes. Códigos de ubicación tipo `C5.1`
+- **Depósito 3D según el plano y las indicaciones de planta:** filas G y E/F de 12 módulos (G con medio
+  módulo en cada punta), A de 18, bloque derecho D, C, B de 5; módulos Mecalux de 2,4 m con 2 posiciones
+  de pallet y 6 niveles; 2 pasillos + hall de entrada; recepción por los portones del fondo. Códigos de ubicación tipo `C5.1`
   (fila C, módulo 5, nivel 1 = piso). Zonas: Recepción, **W0WIP** (armado), Expedición, F1, L1, Q1 (posición a confirmar).
 - **Buscador único:** ubicación (`C5.1`), fila (`C`), zona (`W0WIP`) o número de parte / descripción.
 - **Ir caminando:** la cámara entra por la cabecera del pasillo y camina hasta la ubicación.
@@ -68,8 +69,8 @@ src/
 
 ### Cambios habituales
 
-- **Layout:** editar `src/config/layout.ts` — cada fila con su letra, posición (x, z en metros desde la
-  esquina superior izquierda del plano), cantidad de módulos, hacia qué pasillo mira y huecos vacíos; pasillos y zonas como rectángulos.
+- **Layout:** editar `src/config/layout.ts` (en metros reales) — cada fila con su letra, posición, cantidad
+  de módulos, dónde está el módulo 1, medios módulos y hacia qué pasillo mira; paredes, portones, pasillos y zonas.
 - **Frecuencias de conteo:** `src/config/policies.ts`.
 - **Conexión en línea (QAD) a futuro:** reemplazar `data/storage.ts` y la carga de `Inventory` por llamadas a un servidor;
   la escena y los paneles trabajan sobre el mismo modelo `StockRecord`.
