@@ -115,3 +115,65 @@ export function stripTexture(key: string, items: Array<{ t: number; text: string
     }
   });
 }
+
+/** Chapa acanalada de las paredes (nervios verticales). */
+export const corrugatedTexture = () => {
+  const t = make('chapa', 256, 64, (c) => {
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, 256, 64);
+    for (let x = 0; x < 256; x += 16) {
+      c.fillStyle = 'rgba(0,0,0,0.22)';
+      c.fillRect(x, 0, 5, 64);
+      c.fillStyle = 'rgba(255,255,255,0.35)';
+      c.fillRect(x + 6, 0, 2, 64);
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+};
+
+/** Hoja de portón seccional: paneles horizontales, bisagras y una ventanita ovalada. */
+export const sectionalDoorTexture = () =>
+  make('porton', 256, 256, (c) => {
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 32) {
+      c.fillStyle = 'rgba(0,0,0,0.28)';
+      c.fillRect(0, y, 256, 3);
+      c.fillStyle = 'rgba(0,0,0,0.08)';
+      for (let k = 8; k < 32; k += 8) c.fillRect(0, y + k, 256, 1);
+      c.fillStyle = 'rgba(40,40,40,0.6)';
+      for (const x of [70, 186]) c.fillRect(x, y + 12, 8, 6);
+    }
+    c.fillStyle = '#1f2937';
+    c.beginPath();
+    c.ellipse(128, 150, 34, 15, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = 'rgba(148,163,184,0.8)';
+    c.beginPath();
+    c.ellipse(128, 150, 28, 10, 0, 0, Math.PI * 2);
+    c.fill();
+  });
+
+/** Chapa de características de la estantería (cartel de cabecera, estilo Mecalux). */
+export const specPlateTexture = () =>
+  make('chapa-mecalux', 256, 184, (c) => {
+    c.fillStyle = '#f1f5f9';
+    c.fillRect(0, 0, 256, 184);
+    c.fillStyle = '#3b4fa0';
+    c.font = 'bold 34px system-ui, Arial, sans-serif';
+    c.textAlign = 'center';
+    c.fillText('MECALUX', 128, 38);
+    const bands = ['#facc15', '#3b82f6', '#ef4444', '#ef4444', '#facc15'];
+    bands.forEach((col, i) => {
+      c.fillStyle = col;
+      c.fillRect(10, 52 + i * 25, 90, 19);
+    });
+    c.strokeStyle = '#64748b';
+    c.lineWidth = 2;
+    c.strokeRect(110, 52, 136, 120);
+    c.fillStyle = '#334155';
+    c.font = 'bold 13px system-ui, Arial, sans-serif';
+    c.textAlign = 'left';
+    ['800 kg / pallet', '1600 kg / nivel', '8100 kg / módulo', 'L 2300 mm'].forEach((t, i) => c.fillText(t, 116, 74 + i * 26));
+  });

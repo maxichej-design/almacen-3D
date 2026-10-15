@@ -17,7 +17,7 @@ function boxFor(wh: Warehouse, code: string) {
   const h = d.levelHeight - d.beamHeight - 0.04;
   return {
     position: [loc.position[0], loc.baseY + h / 2 + 0.02, loc.position[2]] as [number, number, number],
-    size: [d.bayWidth - d.uprightSize * 2 - 0.02, h, d.depth + 0.02] as [number, number, number],
+    size: [loc.size[0] - d.uprightSize * 2 - 0.02, h, d.depth + 0.02] as [number, number, number],
     facing: loc.facing,
   };
 }

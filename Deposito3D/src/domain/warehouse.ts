@@ -22,7 +22,18 @@ export function buildWarehouse(cfg: WarehouseLayout): Warehouse {
 
   const rows: RackRow[] = cfg.rows.map((rc) => {
     const x0 = rc.x;
-    const x1 = rc.x + rc.modules * dim.bayWidth;
+    // Ancho de cada módulo (el 1 puede ser medio módulo).
+    const widths = Array.from({ length: rc.modules }, (_, i) => (i === 0 && rc.halfModule1 ? dim.bayWidth / 2 : dim.bayWidth));
+    const x1 = rc.x + widths.reduce((a, b) => a + b, 0);
+    const atEnd = rc.module1 === 'fin';
+    // Tramo [a, b] de cada módulo, contando desde la punta del módulo 1.
+    const spans: Array<[number, number]> = [];
+    let acc = 0;
+    for (const w of widths) {
+      spans.push(atEnd ? [x1 - acc - w, x1 - acc] : [x0 + acc, x0 + acc + w]);
+      acc += w;
+    }
+    const uprightsX = [...new Set(spans.flat().map((v) => Math.round(v * 1000) / 1000))].sort((a, b) => a - b);
     const aisleName = cfg.aisles.find((a) => a.id === rc.aisle)?.name ?? `Pasillo ${rc.aisle}`;
     const row: RackRow = {
       id: rc.id,
@@ -34,7 +45,8 @@ export function buildWarehouse(cfg: WarehouseLayout): Warehouse {
       z0: rc.z,
       z1: rc.z + dim.depth,
       modules: rc.modules,
-      module1AtEnd: rc.module1 === 'fin',
+      module1AtEnd: atEnd,
+      uprightsX,
       emptyStart: rc.emptyStart ?? 0,
       emptyEnd: rc.emptyEnd ?? 0,
       locations: [],
@@ -48,12 +60,8 @@ export function buildWarehouse(cfg: WarehouseLayout): Warehouse {
           aisleId: rc.aisle,
           module,
           level,
-          position: [
-            rc.module1 === 'fin' ? x1 - (module - 0.5) * dim.bayWidth : x0 + (module - 0.5) * dim.bayWidth,
-            bottom + dim.levelHeight / 2,
-            rc.z + dim.depth / 2,
-          ],
-          size: [dim.bayWidth, dim.levelHeight, dim.depth],
+          position: [(spans[module - 1][0] + spans[module - 1][1]) / 2, bottom + dim.levelHeight / 2, rc.z + dim.depth / 2],
+          size: [spans[module - 1][1] - spans[module - 1][0], dim.levelHeight, dim.depth],
           baseY: level === 1 ? 0 : bottom + dim.beamHeight / 2,
           facing: rc.facing,
           crate: rc.crateLevels?.includes(level) || undefined,

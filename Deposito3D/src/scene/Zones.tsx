@@ -98,6 +98,7 @@ const ZoneArea = memo(function ZoneArea({ zone }: { zone: Zone }) {
         background={color}
         color="#ffffff"
       />
+      {zone.code === 'PC' && <Desk x={cx} z={cz} />}
       {zone.kind === 'bin' && (
         <mesh position={[cx, 0.42, cz]} castShadow raycast={noRaycast}>
           <boxGeometry args={[zone.w - 0.05, 0.84, zone.d - 0.05]} />
@@ -130,3 +131,40 @@ const ZoneArea = memo(function ZoneArea({ zone }: { zone: Zone }) {
     </group>
   );
 });
+
+/** Escritorio con monitor y silla (puesto de computadora junto a la entrada). */
+function Desk({ x, z }: { x: number; z: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, 0.74, 0]} castShadow raycast={noRaycast}>
+        <boxGeometry args={[1.15, 0.04, 0.65]} />
+        <meshStandardMaterial color="#e7e5e4" roughness={0.6} />
+      </mesh>
+      {[[-0.52, -0.28], [0.52, -0.28], [-0.52, 0.28], [0.52, 0.28]].map(([dx, dz]) => (
+        <mesh key={`${dx}${dz}`} position={[dx, 0.37, dz]} raycast={noRaycast}>
+          <boxGeometry args={[0.04, 0.74, 0.04]} />
+          <meshStandardMaterial color="#9ca3af" />
+        </mesh>
+      ))}
+      <mesh position={[0, 1.02, -0.18]} castShadow raycast={noRaycast}>
+        <boxGeometry args={[0.55, 0.34, 0.03]} />
+        <meshStandardMaterial color="#111827" roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 1.02, -0.163]} raycast={noRaycast}>
+        <planeGeometry args={[0.5, 0.29]} />
+        <meshBasicMaterial color="#60a5fa" />
+      </mesh>
+      <mesh position={[0, 0.48, 0.55]} raycast={noRaycast}>
+        <boxGeometry args={[0.45, 0.08, 0.45]} />
+        <meshStandardMaterial color="#1f2937" />
+      </mesh>
+      {/* Rollos de film al costado, como en la foto */}
+      {[-0.75, -0.95].map((dx) => (
+        <mesh key={dx} position={[dx, 0.25, 0.1]} raycast={noRaycast}>
+          <cylinderGeometry args={[0.07, 0.07, 0.5, 16]} />
+          <meshStandardMaterial color="#e5e7eb" transparent opacity={0.85} roughness={0.2} />
+        </mesh>
+      ))}
+    </group>
+  );
+}

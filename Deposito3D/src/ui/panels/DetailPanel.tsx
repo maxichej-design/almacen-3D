@@ -1,4 +1,4 @@
-import { layout } from '../../config/layout';
+import { layout, RACK_SPEC } from '../../config/layout';
 import { daysSince, formatDate, type LocationSummary } from '../../domain/inventory';
 import type { RackRow, Zone } from '../../domain/types';
 import { ABC_COLORS, ABC_LABEL, COUNT_COLORS, COUNT_ICON, COUNT_LABEL, OCCUPANCY, tintFor } from '../../scene/palette';
@@ -195,6 +195,20 @@ function RowDetail({ row }: { row: RackRow }) {
       <div className="actions">
         <button onClick={focus}>Centrar vista</button>
       </div>
+
+      <h3>Estructura (chapa de cabecera)</h3>
+      <dl className="grid">
+        <dt>Sistema</dt><dd>{RACK_SPEC.fabricante} · {RACK_SPEC.sistema.toLowerCase()}</dd>
+        <dt>Pallet</dt><dd>{RACK_SPEC.palletTipo} · {RACK_SPEC.palletDimensiones}</dd>
+        <dt>Carga máx.</dt>
+        <dd>
+          {fmtNum(RACK_SPEC.cargaPorPallet)} kg por pallet · {RACK_SPEC.palletsPorNivel} por nivel
+        </dd>
+        <dt>Por nivel</dt><dd>{fmtNum(RACK_SPEC.cargaPorNivel)} kg (larguero {RACK_SPEC.larguero})</dd>
+        <dt>Por módulo</dt><dd>{fmtNum(RACK_SPEC.cargaPorModulo)} kg (sin incluir el piso)</dd>
+        <dt>Alturas</dt><dd>{RACK_SPEC.alturasNiveles.join(' / ')} mm</dd>
+        <dt>Año</dt><dd>{RACK_SPEC.anio}</dd>
+      </dl>
     </div>
   );
 }

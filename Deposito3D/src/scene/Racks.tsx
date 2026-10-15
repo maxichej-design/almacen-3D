@@ -7,7 +7,7 @@ import { useStore } from '../state/store';
 import { useBoxInstances, type BoxInstance } from './instancing';
 import { Label } from './Label';
 import { SCENE } from './palette';
-import { stripTexture } from './textures';
+import { specPlateTexture, stripTexture } from './textures';
 
 /** Píxeles de movimiento a partir de los cuales un clic se considera arrastre. */
 export const DRAG_PX = 5;
@@ -33,7 +33,9 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
   const setHover = useStore((s) => s.setHover);
   const clearHover = useStore((s) => s.clearHover);
 
-  const top = layout.levels * dim.levelHeight;
+  // Los parantes llegan hasta la mitad del pallet del último nivel (arriba no hay más larguero).
+  const beamLevels = layout.levels - 1;
+  const top = beamLevels * dim.levelHeight + 0.55;
   const length = row.x1 - row.x0;
   const us = dim.uprightSize;
   const frontZ = row.facing === 1 ? row.z1 : row.z0;
@@ -41,14 +43,13 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
   const { uprights, beams } = useMemo(() => {
     const uprights: BoxInstance[] = [];
     const beams: BoxInstance[] = [];
-    const uh = top + 0.3;
-    for (let i = 0; i <= row.modules; i++) {
-      const x = row.x0 + i * dim.bayWidth;
+    const uh = top;
+    for (const x of row.uprightsX) {
       for (const z of [row.z0 + us / 2, row.z1 - us / 2]) uprights.push({ position: [x, uh / 2, z], scale: [us, uh, us] });
       for (const y of [0.35, uh * 0.5, uh - 0.2])
         uprights.push({ position: [x, y, (row.z0 + row.z1) / 2], scale: [0.04, 0.04, dim.depth - us] });
     }
-    for (let k = 1; k <= layout.levels; k++) {
+    for (let k = 1; k <= beamLevels; k++) {
       const y = k * dim.levelHeight;
       for (const z of [row.z0 + us / 2, row.z1 - us / 2])
         beams.push({ position: [(row.x0 + row.x1) / 2, y, z], scale: [length, dim.beamHeight, 0.05] });
@@ -75,12 +76,12 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
   const strip = useMemo(() => {
     const items = Array.from({ length: row.modules }, (_, i) => {
       const m = i + 1;
-      const x = row.module1AtEnd ? row.x1 - (m - 0.5) * dim.bayWidth : row.x0 + (m - 0.5) * dim.bayWidth;
+      const x = row.locations[(m - 1) * layout.levels].position[0];
       const t = row.facing === 1 ? (x - row.x0) / length : (row.x1 - x) / length;
       return { t, text: `${row.id}${m}` };
     });
     return stripTexture(`${row.id}-${row.facing}`, items, Math.round(length * 60), 48);
-  }, [row, length, dim.bayWidth]);
+  }, [row, length]);
 
   return (
     <group>
@@ -110,17 +111,30 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
         </mesh>
       ))}
 
+      {/* Chapa de características (Mecalux) en ambas cabeceras */}
+      {[
+        { x: row.x1 + 0.055, rot: Math.PI / 2 },
+        { x: row.x0 - 0.055, rot: -Math.PI / 2 },
+      ].map((p) => (
+        <group key={p.x} position={[p.x, 1.55, (row.z0 + row.z1) / 2]} rotation={[0, p.rot, 0]}>
+          <mesh raycast={noRaycast}>
+            <planeGeometry args={[0.42, 0.3]} />
+            <meshBasicMaterial map={specPlateTexture()} toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+
       {/* Letra de la fila en ambas cabeceras */}
       <Label
         text={row.id}
-        position={[row.x1 + 0.06, top + 0.75, (row.z0 + row.z1) / 2]}
+        position={[row.x1 + 0.06, top + 0.6, (row.z0 + row.z1) / 2]}
         rotation={[0, Math.PI / 2, 0]}
         height={0.85}
         background="#ffffff"
       />
       <Label
         text={row.id}
-        position={[row.x0 - 0.06, top + 0.75, (row.z0 + row.z1) / 2]}
+        position={[row.x0 - 0.06, top + 0.6, (row.z0 + row.z1) / 2]}
         rotation={[0, -Math.PI / 2, 0]}
         height={0.85}
         background="#ffffff"
@@ -129,7 +143,7 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
       {showLabels && (
         <>
           <mesh
-            position={[(row.x0 + row.x1) / 2, top + 0.28, frontZ + row.facing * 0.03]}
+            position={[(row.x0 + row.x1) / 2, beamLevels * dim.levelHeight + 0.2, frontZ + row.facing * 0.03]}
             rotation={[0, row.facing === 1 ? 0 : Math.PI, 0]}
             raycast={noRaycast}
           >

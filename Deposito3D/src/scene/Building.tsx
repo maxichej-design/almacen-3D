@@ -3,10 +3,20 @@ import { layout, type WallConfig } from '../config/layout';
 import { useStore } from '../state/store';
 import { Label } from './Label';
 import { SCENE } from './palette';
+import { corrugatedTexture, sectionalDoorTexture } from './textures';
 
 const noRaycast = () => null;
 const LINE_W = 0.1;
-const DOOR_H = 4.5;
+const DOOR_H = 5;
+const BLOCK_H = 2.4;
+
+/** Textura de chapa repetida según el largo del tramo. */
+function sheetFor(length: number) {
+  const t = corrugatedTexture().clone();
+  t.repeat.set(Math.max(1, length / 4), 1);
+  t.needsUpdate = true;
+  return t;
+}
 
 /** Piso, paredes, demarcación al pie de las filas, huecos vacíos y nombres de pasillos. */
 /** Tramos de una pared que quedan entre portones (en la coordenada a lo largo de la pared). */
@@ -53,60 +63,79 @@ export function Building() {
         <meshStandardMaterial color={SCENE.floor} roughness={0.35} metalness={0.05} />
       </mesh>
 
-      {/* Paredes (la del frente va baja, "cortada", para poder mirar desde ese lado) */}
+      {/* Paredes: zócalo de bloque oscuro + chapa acanalada gris (la del frente va baja para poder mirar) */}
       {layout.walls.map((wall) =>
         wallSpans(wall).map(([a, b]) => {
-          const box = wallBox(wall, a, b, 0, wall.height);
+          const base = Math.min(BLOCK_H, wall.height);
+          const lower = wallBox(wall, a, b, 0, base, 0.22);
+          const upper = wall.height > base ? wallBox(wall, a, b, base, wall.height - base) : null;
           return (
-            <mesh key={`${wall.id}-${a}`} position={box.position} receiveShadow castShadow={!wall.cut} raycast={noRaycast}>
-              <boxGeometry args={box.size} />
-              <meshStandardMaterial color={wall.cut ? SCENE.wallSide : SCENE.wall} roughness={0.9} />
-            </mesh>
+            <group key={`${wall.id}-${a}`}>
+              <mesh position={lower.position} receiveShadow raycast={noRaycast}>
+                <boxGeometry args={lower.size} />
+                <meshStandardMaterial color={SCENE.wallBlock} roughness={0.95} />
+              </mesh>
+              {upper && (
+                <mesh position={upper.position} receiveShadow raycast={noRaycast}>
+                  <boxGeometry args={upper.size} />
+                  <meshStandardMaterial color={SCENE.wallSheet} map={sheetFor(b - a)} roughness={0.6} metalness={0.3} />
+                </mesh>
+              )}
+            </group>
           );
         }),
       )}
 
-      {/* Portones */}
+      {/* Portones seccionales: abertura de 5 m con la hoja levantada arriba (los tres iguales) */}
       {layout.doors.map((dr) => {
         const wall = layout.walls.find((w) => w.id === dr.wall);
         if (!wall) return null;
         const vertical = wall.x0 === wall.x1;
-        const full = !wall.cut && wall.height > DOOR_H;
         const mid = (dr.from + dr.to) / 2;
-        const at = (along: number, y: number): [number, number, number] =>
-          vertical ? [wall.x0, y, along] : [along, y, wall.z0];
-        // El cartel mira hacia adentro del depósito.
+        const width = dr.to - dr.from;
         const inward = vertical ? (wall.x0 <= inn.x0 ? 1 : -1) : wall.z0 <= inn.z0 ? 1 : -1;
-        const labelPos: [number, number, number] = vertical
-          ? [wall.x0 + inward * 0.12, full ? DOOR_H + 0.75 : 1.1, mid]
-          : [mid, full ? DOOR_H + 0.75 : 1.1, wall.z0 + inward * 0.12];
-        const labelRot: [number, number, number] = vertical ? [0, inward > 0 ? Math.PI / 2 : -Math.PI / 2, 0] : [0, inward > 0 ? 0 : Math.PI, 0];
-        const lintel = wallBox(wall, dr.from, dr.to, DOOR_H, wall.height - DOOR_H);
-        const roll = wallBox(wall, dr.from, dr.to, DOOR_H, 0.5, 0.5);
+        // Punto sobre la pared, desplazado hacia adentro `off` metros.
+        const at = (along: number, y: number, off = 0): [number, number, number] =>
+          vertical ? [wall.x0 + inward * off, y, along] : [along, y, wall.z0 + inward * off];
+        const faceRot: [number, number, number] = vertical ? [0, inward > 0 ? Math.PI / 2 : -Math.PI / 2, 0] : [0, inward > 0 ? 0 : Math.PI, 0];
+        const panelTop = Math.min(DOOR_H + 4.3, layout.wallHeight - 0.2);
         return (
           <group key={dr.name}>
-            {full && (
-              <>
-                <mesh position={lintel.position} raycast={noRaycast}>
-                  <boxGeometry args={lintel.size} />
-                  <meshStandardMaterial color={SCENE.wall} roughness={0.9} />
-                </mesh>
-                <mesh position={roll.position} raycast={noRaycast}>
-                  <boxGeometry args={roll.size} />
-                  <meshStandardMaterial color={SCENE.door} metalness={0.4} roughness={0.5} />
-                </mesh>
-              </>
+            {/* Dintel y pared sobre el portón (solo en paredes altas) */}
+            {!wall.cut && (
+              <mesh position={wallBox(wall, dr.from, dr.to, DOOR_H, wall.height - DOOR_H).position} raycast={noRaycast}>
+                <boxGeometry args={wallBox(wall, dr.from, dr.to, DOOR_H, wall.height - DOOR_H).size} />
+                <meshStandardMaterial color={SCENE.wallSheet} map={sheetFor(width)} roughness={0.6} metalness={0.3} />
+              </mesh>
             )}
-            {[dr.from, dr.to].map((p) => (
-              <mesh key={p} position={at(p, (full ? DOOR_H : 1.2) / 2)} raycast={noRaycast}>
-                <boxGeometry args={vertical ? [0.3, full ? DOOR_H : 1.2, 0.15] : [0.15, full ? DOOR_H : 1.2, 0.3]} />
-                <meshStandardMaterial color="#facc15" roughness={0.6} />
+            {/* Hoja levantada, del lado de adentro */}
+            <mesh position={at(mid, (DOOR_H + panelTop) / 2, 0.2)} rotation={faceRot} raycast={noRaycast}>
+              <planeGeometry args={[width + 0.2, panelTop - DOOR_H]} />
+              <meshStandardMaterial color={SCENE.doorPanel} map={sectionalDoorTexture()} roughness={0.45} metalness={0.35} side={2} />
+            </mesh>
+            {/* Marco claro y guías */}
+            {[dr.from - 0.08, dr.to + 0.08].map((p) => (
+              <mesh key={p} position={at(p, panelTop / 2, 0.12)} raycast={noRaycast}>
+                <boxGeometry args={vertical ? [0.12, panelTop, 0.16] : [0.16, panelTop, 0.12]} />
+                <meshStandardMaterial color={SCENE.doorFrame} metalness={0.5} roughness={0.4} />
               </mesh>
             ))}
-            <Label text={dr.name.toUpperCase()} position={labelPos} rotation={labelRot} height={0.4} background="#0f172a" color="#facc15" />
+            <mesh position={at(mid, DOOR_H + 0.05, 0.12)} raycast={noRaycast}>
+              <boxGeometry args={vertical ? [0.16, 0.12, width + 0.3] : [width + 0.3, 0.12, 0.16]} />
+              <meshStandardMaterial color={SCENE.doorFrame} metalness={0.5} roughness={0.4} />
+            </mesh>
+            {/* Defensas amarillas a los costados */}
+            {[dr.from - 0.35, dr.to + 0.35].map((p) => (
+              <mesh key={`b${p}`} position={at(p, 0.6, 1.0)} raycast={noRaycast}>
+                <cylinderGeometry args={[0.06, 0.06, 1.2, 12]} />
+                <meshStandardMaterial color="#facc15" roughness={0.5} />
+              </mesh>
+            ))}
+            <Label text={dr.name.toUpperCase()} position={at(mid, panelTop + 0.35, 0.25)} rotation={faceRot} height={0.4} background="#0f172a" color="#facc15" />
           </group>
         );
       })}
+
       {wh.rows.map((r) => {
         const front = r.facing === 1 ? r.z1 + 0.08 : r.z0 - 0.08;
         const xa = r.x0 - r.emptyStart;

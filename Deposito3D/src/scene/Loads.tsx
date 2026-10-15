@@ -6,8 +6,9 @@ import { useBoxInstances, type BoxInstance } from './instancing';
 import { SCENE, tintFor } from './palette';
 import { cartonTexture, crateTexture, kltTexture, palletTexture } from './textures';
 
-const PALLET = { w: 1.2, d: 1.0, h: 0.15 };
-const CRATE = { w: 1.2, d: 0.9, h: 0.78 };
+// Pallet IRAM 10016: 1,0 m de frente (sobre el larguero) × 1,2 m de fondo; carga hasta 1,1 m.
+const PALLET = { w: 1.0, d: 1.2, h: 0.14 };
+const CRATE = { w: 1.0, d: 1.2, h: 0.78 };
 const noRaycast = () => null;
 
 type LoadKind = 'carton' | 'plastico' | 'klt' | 'film' | 'cajon';
@@ -46,16 +47,17 @@ export function Loads() {
       const [x, , z] = loc.position;
       if (!sum) {
         if (mode === 'ocupacion') {
-          g.free.push({ position: [x, loc.baseY + 0.07, z], scale: [dim.bayWidth - 0.3, 0.02, dim.depth - 0.15] });
+          g.free.push({ position: [x, loc.baseY + 0.07, z], scale: [loc.size[0] - 0.3, 0.02, dim.depth - 0.15] });
         }
         continue;
       }
       const tint = tintFor(sum, mode);
-      const pallets = sum.records.length > 1 || hash(loc.code) > 0.4 ? 2 : 1;
+      const half = loc.size[0] < dim.bayWidth * 0.75; // medio módulo: entra un solo pallet
+      const pallets = half ? 1 : sum.records.length > 1 || hash(loc.code) > 0.4 ? 2 : 1;
       for (let i = 0; i < pallets; i++) {
         const rec = sum.records[i % sum.records.length];
         const kind = loc.crate ? 'cajon' : kindFor(rec.partNumber, loc.level);
-        const px = pallets === 1 ? x : x + (i === 0 ? 0.66 : -0.66);
+        const px = pallets === 1 ? x : x + (i === 0 ? 0.57 : -0.57);
         if (kind === 'cajon') {
           g.cajon.push({ position: [px, CRATE.h / 2, z], scale: [CRATE.w, CRATE.h, CRATE.d], color: tint ?? SCENE.crate });
           continue;

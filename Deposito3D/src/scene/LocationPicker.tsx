@@ -19,11 +19,10 @@ export function LocationPicker() {
 
   const items = useMemo<BoxInstance[]>(() => {
     const d = layout.rack;
-    const w = d.bayWidth - d.uprightSize * 2 - 0.04;
     const h = d.levelHeight - d.beamHeight - 0.06;
     return wh.locations.map((l) => ({
       position: [l.position[0], l.baseY + h / 2 + 0.02, l.position[2]],
-      scale: [w, h, d.depth],
+      scale: [l.size[0] - d.uprightSize * 2 - 0.04, h, d.depth],
     }));
   }, [wh]);
   useBoxInstances(ref, items);

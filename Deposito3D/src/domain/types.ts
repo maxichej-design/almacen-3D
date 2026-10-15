@@ -38,6 +38,8 @@ export interface RackRow {
   modules: number;
   /** El módulo 1 está en x1 (fin) en vez de x0. */
   module1AtEnd: boolean;
+  /** Bordes de los módulos en X (parantes), de x0 a x1. */
+  uprightsX: number[];
   /** Huecos sin estantería en los extremos. */
   emptyStart: number;
   emptyEnd: number;
