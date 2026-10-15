@@ -74,6 +74,11 @@ export interface WallConfig {
   height: number;
   /** Pared dibujada baja ("cortada") para poder mirar el depósito desde ese lado. */
   cut?: boolean;
+  /**
+   * Terminación: 'chapa' = zócalo de bloques gris azulado + chapa blanca arriba (por defecto);
+   * 'bloque-blanco' = pared de bloques pintada de blanco hasta arriba.
+   */
+  finish?: 'chapa' | 'bloque-blanco';
 }
 
 /** Portón: tramo de una pared, medido a lo largo de ella (x si es horizontal, z si es vertical). */
@@ -168,7 +173,8 @@ export const layout: WarehouseLayout = {
   walls: [
     { id: 'izquierda', x0: WALL_LEFT, z0: -0.27, x1: WALL_LEFT, z1: 13.07, height: 10 },
     { id: 'fondo', x0: WALL_LEFT, z0: 13.07, x1: WALL_RIGHT, z1: 13.07, height: 10 },
-    { id: 'derecha', x0: WALL_RIGHT, z0: -0.27, x1: WALL_RIGHT, z1: 13.07, height: 10 },
+    // Atrás de D, C y B no hay chapa: pared de bloques pintada de blanco (del otro lado están las oficinas).
+    { id: 'derecha', x0: WALL_RIGHT, z0: -0.27, x1: WALL_RIGHT, z1: 13.07, height: 10, finish: 'bloque-blanco' },
     { id: 'frente', x0: WALL_LEFT, z0: -0.27, x1: WALL_RIGHT, z1: -0.27, height: 0.6, cut: true },
   ],
   doors: [

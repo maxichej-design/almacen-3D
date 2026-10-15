@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { WarehouseScene } from './scene/WarehouseScene';
 import { About } from './ui/About';
 import { Legend } from './ui/Legend';
+import { ForkliftHud } from './ui/ForkliftHud';
 import { WalkHud } from './ui/WalkHud';
 import { Minimap } from './ui/Minimap';
 import { SidePanel } from './ui/SidePanel';
@@ -18,6 +19,7 @@ export default function App() {
           <Legend />
           <Minimap />
           <WalkHud />
+          <ForkliftHud />
         </div>
         <SidePanel />
       </main>

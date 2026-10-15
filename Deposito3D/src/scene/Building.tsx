@@ -3,7 +3,7 @@ import { layout, type WallConfig } from '../config/layout';
 import { useStore } from '../state/store';
 import { Label } from './Label';
 import { SCENE } from './palette';
-import { corrugatedTexture, sectionalDoorTexture } from './textures';
+import { blockTexture, corrugatedTexture, sectionalDoorTexture } from './textures';
 
 const noRaycast = () => null;
 const LINE_W = 0.1;
@@ -14,6 +14,14 @@ const BLOCK_H = 2.4;
 function sheetFor(length: number) {
   const t = corrugatedTexture().clone();
   t.repeat.set(Math.max(1, length / 4), 1);
+  t.needsUpdate = true;
+  return t;
+}
+
+/** Textura de bloques escalada al tramo (bloques de 40 × 20 cm). */
+function blocksFor(length: number, height: number) {
+  const t = blockTexture().clone();
+  t.repeat.set(length / 0.8, height / 0.4);
   t.needsUpdate = true;
   return t;
 }
@@ -63,9 +71,19 @@ export function Building() {
         <meshStandardMaterial color={SCENE.floor} roughness={0.35} metalness={0.05} />
       </mesh>
 
-      {/* Paredes: zócalo de bloque oscuro + chapa acanalada gris (la del frente va baja para poder mirar) */}
+      {/* Paredes: zócalo de bloques gris azulado + chapa acanalada blanca (la del frente va baja para poder
+          mirar); la de atrás de D/C/B es toda de bloques pintados de blanco. */}
       {layout.walls.map((wall) =>
         wallSpans(wall).map(([a, b]) => {
+          if (wall.finish === 'bloque-blanco') {
+            const full = wallBox(wall, a, b, 0, wall.height, 0.22);
+            return (
+              <mesh key={`${wall.id}-${a}`} position={full.position} receiveShadow raycast={noRaycast}>
+                <boxGeometry args={full.size} />
+                <meshStandardMaterial color={SCENE.wallBrickWhite} map={blocksFor(b - a, wall.height)} roughness={0.95} />
+              </mesh>
+            );
+          }
           const base = Math.min(BLOCK_H, wall.height);
           const lower = wallBox(wall, a, b, 0, base, 0.22);
           const upper = wall.height > base ? wallBox(wall, a, b, base, wall.height - base) : null;
@@ -73,12 +91,12 @@ export function Building() {
             <group key={`${wall.id}-${a}`}>
               <mesh position={lower.position} receiveShadow raycast={noRaycast}>
                 <boxGeometry args={lower.size} />
-                <meshStandardMaterial color={SCENE.wallBlock} roughness={0.95} />
+                <meshStandardMaterial color={SCENE.wallBlock} map={blocksFor(b - a, base)} roughness={0.95} />
               </mesh>
               {upper && (
                 <mesh position={upper.position} receiveShadow raycast={noRaycast}>
                   <boxGeometry args={upper.size} />
-                  <meshStandardMaterial color={SCENE.wallSheet} map={sheetFor(b - a)} roughness={0.6} metalness={0.3} />
+                  <meshStandardMaterial color={SCENE.wallSheet} map={sheetFor(b - a)} roughness={0.55} metalness={0.1} />
                 </mesh>
               )}
             </group>
@@ -105,13 +123,13 @@ export function Building() {
             {!wall.cut && (
               <mesh position={wallBox(wall, dr.from, dr.to, DOOR_H, wall.height - DOOR_H).position} raycast={noRaycast}>
                 <boxGeometry args={wallBox(wall, dr.from, dr.to, DOOR_H, wall.height - DOOR_H).size} />
-                <meshStandardMaterial color={SCENE.wallSheet} map={sheetFor(width)} roughness={0.6} metalness={0.3} />
+                <meshStandardMaterial color={SCENE.wallSheet} map={sheetFor(width)} roughness={0.55} metalness={0.1} />
               </mesh>
             )}
             {/* Hoja levantada, del lado de adentro */}
             <mesh position={at(mid, (DOOR_H + panelTop) / 2, 0.2)} rotation={faceRot} raycast={noRaycast}>
               <planeGeometry args={[width + 0.2, panelTop - DOOR_H]} />
-              <meshStandardMaterial color={SCENE.doorPanel} map={sectionalDoorTexture()} roughness={0.45} metalness={0.35} side={2} />
+              <meshStandardMaterial color={SCENE.doorPanel} map={sectionalDoorTexture()} roughness={0.45} metalness={0.1} side={2} />
             </mesh>
             {/* Marco claro y guías */}
             {[dr.from - 0.08, dr.to + 0.08].map((p) => (

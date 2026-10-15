@@ -72,6 +72,7 @@ function LocationDetail({ code }: { code: string }) {
   const summary = useStore((s) => s.index.byLocation.get(code));
   const select = useStore((s) => s.select);
   const walkTo = useStore((s) => s.walkTo);
+  const fetchPallet = useStore((s) => s.fetchPallet);
   const focus = useStore((s) => s.focusSelection);
   const registerCount = useStore((s) => s.registerCount);
   const loc = wh.locationIndex.get(code);
@@ -109,6 +110,11 @@ function LocationDetail({ code }: { code: string }) {
 
       <div className="actions">
         <button className="primary" onClick={() => walkTo(code)}>🚶 Ir caminando</button>
+        {summary && (
+          <button className="primary" onClick={() => fetchPallet(code)} title="La apiladora va, saca el pallet y lo deja en el piso del pasillo">
+            🏗️ Bajar pallet
+          </button>
+        )}
         <button onClick={focus}>Centrar vista</button>
         <button onClick={() => select({ kind: 'row', id: row.id })}>Ver fila {row.id}</button>
       </div>

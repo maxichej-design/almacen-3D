@@ -2,6 +2,8 @@ import { useMemo, useRef } from 'react';
 import type * as THREE from 'three';
 import { layout } from '../config/layout';
 import { useStore } from '../state/store';
+import type { ColorMode, RackLocation } from '../domain/types';
+import type { LocationSummary } from '../domain/inventory';
 import { useBoxInstances, type BoxInstance } from './instancing';
 import { SCENE, tintFor } from './palette';
 import { cartonTexture, crateTexture, kltTexture, palletTexture } from './textures';
@@ -11,7 +13,7 @@ const PALLET = { w: 1.0, d: 1.2, h: 0.14 };
 const CRATE = { w: 1.0, d: 1.2, h: 0.78 };
 const noRaycast = () => null;
 
-type LoadKind = 'carton' | 'plastico' | 'klt' | 'film' | 'cajon';
+export type LoadKind = 'carton' | 'plastico' | 'klt' | 'film' | 'cajon';
 
 function hash(s: string) {
   let h = 2166136261;
@@ -26,6 +28,58 @@ function kindFor(pn: string, level: number): LoadKind {
   return r < 0.45 ? 'carton' : r < 0.62 ? 'plastico' : r < 0.82 ? 'klt' : 'film';
 }
 
+/** Cómo se ve un pallet de una ubicación (se usa en la estantería y en la apiladora). */
+export interface PalletVisual {
+  slot: number;
+  /** Centro en X (mundo) dentro del módulo. */
+  x: number;
+  kind: LoadKind;
+  /** Altura de la carga (sin el pallet). */
+  loadH: number;
+  pallet: 'wood' | 'plastic' | null;
+  loadColor: string;
+}
+
+export function palletVisuals(loc: RackLocation, sum: LocationSummary, mode: ColorMode): PalletVisual[] {
+  const dim = layout.rack;
+  const clear = dim.levelHeight - dim.beamHeight - 0.28;
+  const tint = tintFor(sum, mode);
+  const x = loc.position[0];
+  const half = loc.size[0] < dim.bayWidth * 0.75; // medio módulo: entra un solo pallet
+  const pallets = half ? 1 : sum.records.length > 1 || hash(loc.code) > 0.4 ? 2 : 1;
+  const out: PalletVisual[] = [];
+  for (let i = 0; i < pallets; i++) {
+    const rec = sum.records[i % sum.records.length];
+    const kind = loc.crate ? 'cajon' : kindFor(rec.partNumber, loc.level);
+    const px = pallets === 1 ? x : x + (i === 0 ? 0.57 : -0.57);
+    if (kind === 'cajon') {
+      out.push({ slot: i, x: px, kind, loadH: CRATE.h, pallet: null, loadColor: tint ?? SCENE.crate });
+      continue;
+    }
+    const natural =
+      kind === 'klt' ? SCENE.klt : kind === 'film' ? SCENE.film : hash(rec.partNumber) > 0.7 ? SCENE.cartonAlt : SCENE.carton;
+    out.push({
+      slot: i,
+      x: px,
+      kind,
+      loadH: clear * (0.5 + 0.5 * hash(rec.partNumber + loc.code + i)),
+      pallet: kind === 'plastico' || kind === 'klt' ? 'plastic' : 'wood',
+      loadColor: tint ?? natural,
+    });
+  }
+  return out;
+}
+
+export const LOAD_MAPS: Record<LoadKind, () => THREE.Texture> = {
+  carton: cartonTexture,
+  plastico: cartonTexture,
+  klt: kltTexture,
+  film: cartonTexture,
+  cajon: crateTexture,
+};
+export const LOAD_ROUGHNESS: Record<LoadKind, number> = { carton: 0.85, plastico: 0.85, klt: 0.6, film: 0.35, cajon: 0.7 };
+export { PALLET, CRATE };
+
 /**
  * Toda la mercadería de las estanterías, dibujada en pocos InstancedMesh
  * (uno por tipo de material) para que funcione fluido con cientos de ubicaciones.
@@ -34,52 +88,44 @@ export function Loads() {
   const wh = useStore((s) => s.warehouse);
   const index = useStore((s) => s.index);
   const mode = useStore((s) => s.colorMode);
+  // Pallet que sacó la apiladora: no se dibuja en la estantería.
+  const lifted = useStore((s) => s.forklift.lifted);
 
   const groups = useMemo(() => {
     const g: Record<'palletWood' | 'palletPlastic' | LoadKind | 'free', BoxInstance[]> = {
       palletWood: [], palletPlastic: [], carton: [], plastico: [], klt: [], film: [], cajon: [], free: [],
     };
     const dim = layout.rack;
-    const clear = dim.levelHeight - dim.beamHeight - 0.28;
 
     for (const loc of wh.locations) {
       const sum = index.byLocation.get(loc.code);
-      const [x, , z] = loc.position;
+      const [, , z] = loc.position;
       if (!sum) {
         if (mode === 'ocupacion') {
-          g.free.push({ position: [x, loc.baseY + 0.07, z], scale: [loc.size[0] - 0.3, 0.02, dim.depth - 0.15] });
+          g.free.push({ position: [loc.position[0], loc.baseY + 0.07, z], scale: [loc.size[0] - 0.3, 0.02, dim.depth - 0.15] });
         }
         continue;
       }
-      const tint = tintFor(sum, mode);
-      const half = loc.size[0] < dim.bayWidth * 0.75; // medio módulo: entra un solo pallet
-      const pallets = half ? 1 : sum.records.length > 1 || hash(loc.code) > 0.4 ? 2 : 1;
-      for (let i = 0; i < pallets; i++) {
-        const rec = sum.records[i % sum.records.length];
-        const kind = loc.crate ? 'cajon' : kindFor(rec.partNumber, loc.level);
-        const px = pallets === 1 ? x : x + (i === 0 ? 0.57 : -0.57);
-        if (kind === 'cajon') {
-          g.cajon.push({ position: [px, CRATE.h / 2, z], scale: [CRATE.w, CRATE.h, CRATE.d], color: tint ?? SCENE.crate });
+      for (const v of palletVisuals(loc, sum, mode)) {
+        if (lifted && lifted.code === loc.code && lifted.slot === v.slot) continue;
+        if (v.kind === 'cajon') {
+          g.cajon.push({ position: [v.x, loc.baseY + CRATE.h / 2, z], scale: [CRATE.w, CRATE.h, CRATE.d], color: v.loadColor });
           continue;
         }
-        const h = clear * (0.5 + 0.5 * hash(rec.partNumber + loc.code + i));
-        const plastic = kind === 'plastico' || kind === 'klt';
-        (plastic ? g.palletPlastic : g.palletWood).push({
-          position: [px, loc.baseY + PALLET.h / 2, z],
+        (v.pallet === 'plastic' ? g.palletPlastic : g.palletWood).push({
+          position: [v.x, loc.baseY + PALLET.h / 2, z],
           scale: [PALLET.w, PALLET.h, PALLET.d],
-          color: plastic ? SCENE.palletPlastic : SCENE.palletWood,
+          color: v.pallet === 'plastic' ? SCENE.palletPlastic : SCENE.palletWood,
         });
-        const natural =
-          kind === 'klt' ? SCENE.klt : kind === 'film' ? SCENE.film : hash(rec.partNumber) > 0.7 ? SCENE.cartonAlt : SCENE.carton;
-        g[kind].push({
-          position: [px, loc.baseY + PALLET.h + h / 2, z],
-          scale: [PALLET.w - 0.06, h, PALLET.d - 0.06],
-          color: tint ?? natural,
+        g[v.kind].push({
+          position: [v.x, loc.baseY + PALLET.h + v.loadH / 2, z],
+          scale: [PALLET.w - 0.06, v.loadH, PALLET.d - 0.06],
+          color: v.loadColor,
         });
       }
     }
     return g;
-  }, [wh, index, mode]);
+  }, [wh, index, mode, lifted]);
 
   return (
     <group>

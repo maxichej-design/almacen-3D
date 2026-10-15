@@ -122,10 +122,29 @@ export const corrugatedTexture = () => {
     c.fillStyle = '#ffffff';
     c.fillRect(0, 0, 256, 64);
     for (let x = 0; x < 256; x += 16) {
-      c.fillStyle = 'rgba(0,0,0,0.22)';
+      c.fillStyle = 'rgba(0,0,0,0.1)';
       c.fillRect(x, 0, 5, 64);
       c.fillStyle = 'rgba(255,255,255,0.35)';
       c.fillRect(x + 6, 0, 2, 64);
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+};
+
+/** Bloques de hormigón (40 × 20 cm) en hilada trabada: la textura cubre 0,8 × 0,4 m. */
+export const blockTexture = () => {
+  const t = make('bloques', 256, 128, (c) => {
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, 256, 128);
+    c.fillStyle = 'rgba(0,0,0,0.38)';
+    for (const y of [0, 64]) c.fillRect(0, y, 256, 4);
+    for (const x of [0, 128]) c.fillRect(x, 0, 4, 64);
+    for (const x of [64, 192]) c.fillRect(x, 64, 4, 64);
+    // Textura del bloque (poros).
+    for (let i = 0; i < 500; i++) {
+      c.fillStyle = `rgba(0,0,0,${0.04 + ((i * 37) % 7) / 100})`;
+      c.fillRect((i * 97) % 256, (i * 53) % 128, 2, 2);
     }
   });
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -176,4 +195,72 @@ export const specPlateTexture = () =>
     c.font = 'bold 13px system-ui, Arial, sans-serif';
     c.textAlign = 'left';
     ['800 kg / pallet', '1600 kg / nivel', '8100 kg / módulo', 'L 2300 mm'].forEach((t, i) => c.fillText(t, 116, 74 + i * 26));
+  });
+
+/**
+ * Costado de la apiladora Hangcha (negra, panel verde de batería de litio, marca y chapa del proveedor).
+ * `mirror` para el costado izquierdo, así el panel verde queda siempre del lado del mástil.
+ */
+export const forkliftSideTexture = (mirror: boolean) =>
+  make(`apiladora|${mirror}`, 512, 256, (c) => {
+    if (mirror) {
+      c.translate(512, 0);
+      c.scale(-1, 1);
+    }
+    c.fillStyle = '#17191b';
+    c.fillRect(0, 0, 512, 256);
+    // Panel verde de la batería (trapecio con esquinas redondeadas), del lado del mástil.
+    const g = c.createLinearGradient(300, 60, 470, 220);
+    g.addColorStop(0, '#5ee04f');
+    g.addColorStop(1, '#2f9e34');
+    c.fillStyle = g;
+    c.beginPath();
+    c.moveTo(310, 70);
+    c.lineTo(455, 62);
+    c.quadraticCurveTo(478, 62, 480, 86);
+    c.lineTo(486, 196);
+    c.quadraticCurveTo(486, 214, 466, 216);
+    c.lineTo(340, 222);
+    c.quadraticCurveTo(318, 222, 314, 202);
+    c.closePath();
+    c.fill();
+    const text = (s: string, x: number, y: number, font: string, color: string) => {
+      c.save();
+      if (mirror) {
+        // El texto no se espeja: se dibuja deshaciendo la inversión alrededor de su posición.
+        c.translate(x, 0);
+        c.scale(-1, 1);
+        c.translate(-x, 0);
+      }
+      c.font = font;
+      c.fillStyle = color;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(s, x, y);
+      c.restore();
+    };
+    text('Li-ION', 380, 40, 'bold 30px system-ui, Arial, sans-serif', '#ffffff');
+    text('HANGCHA', 150, 205, 'italic 900 52px system-ui, Arial, sans-serif', '#f3f4f6');
+    // Chapa del proveedor.
+    c.fillStyle = '#f8fafc';
+    c.fillRect(60, 90, 150, 56);
+    c.strokeStyle = '#b91c1c';
+    c.lineWidth = 3;
+    c.strokeRect(63, 93, 144, 50);
+    text('CARBONE', 135, 112, 'bold 24px system-ui, Arial, sans-serif', '#b91c1c');
+    text('AUTOELEVADORES', 135, 134, 'bold 12px system-ui, Arial, sans-serif', '#b91c1c');
+  });
+
+/** Leyenda vertical del mástil. */
+export const mastBrandTexture = () =>
+  make('apiladora|mastil', 64, 384, (c) => {
+    c.fillStyle = '#141516';
+    c.fillRect(0, 0, 64, 384);
+    c.translate(32, 192);
+    c.rotate(-Math.PI / 2);
+    c.font = 'italic 900 40px system-ui, Arial, sans-serif';
+    c.fillStyle = '#e5e7eb';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText('HANGCHA', 0, 2);
   });

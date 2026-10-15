@@ -13,6 +13,24 @@ import {
   type CameraKeyframe,
 } from '../scene/cameraPaths';
 
+/** Pallet identificado por ubicación y posición dentro del módulo (0 / 1). */
+export interface PalletRef {
+  code: string;
+  slot: number;
+}
+
+/** Estado de la apiladora (simulación de bajar un pallet). */
+export interface ForkliftState {
+  /** Pedido actual (id cambia con cada pedido). */
+  request: { id: number; action: 'fetch'; target: PalletRef } | { id: number; action: 'home' } | null;
+  /** Texto de lo que está haciendo; null = estacionada. */
+  status: string | null;
+  /** Pallet sacado de la estantería (en las horquillas o en el piso). */
+  lifted: PalletRef | null;
+  /** Pallet apoyado en el piso del pasillo, listo para tocarlo. */
+  onFloor: { x: number; z: number; yaw: number } | null;
+}
+
 export type PanelTab = 'detalle' | 'panel' | 'conteos' | 'datos';
 export type Hover = { kind: 'location' | 'zone' | 'row'; id: string } | null;
 
@@ -32,6 +50,13 @@ interface AppState {
   walkMode: boolean;
   /** Pedido de movimiento de cámara (id cambia en cada pedido). */
   camera: { id: number; path: CameraKeyframe[] } | null;
+
+  forklift: ForkliftState;
+  /** Manda la apiladora a bajar un pallet de la ubicación. */
+  fetchPallet: (code: string) => void;
+  /** Devuelve el pallet a su lugar y la apiladora a su posición. */
+  parkForklift: () => void;
+  setForklift: (patch: Partial<ForkliftState>) => void;
 
   select: (sel: Selection, opts?: { fly?: boolean }) => void;
   setHover: (h: Hover) => void;
@@ -67,6 +92,20 @@ export const useStore = create<AppState>((set, get) => ({
   showLabels: true,
   walkMode: false,
   camera: null,
+  forklift: { request: null, status: null, lifted: null, onFloor: null },
+
+  fetchPallet: (code) => {
+    const f = get().forklift;
+    set({
+      walkMode: false,
+      forklift: { ...f, request: { id: (f.request?.id ?? 0) + 1, action: 'fetch', target: { code, slot: 0 } }, lifted: null, onFloor: null },
+    });
+  },
+  parkForklift: () => {
+    const f = get().forklift;
+    set({ forklift: { ...f, request: { id: (f.request?.id ?? 0) + 1, action: 'home' }, lifted: null, onFloor: null } });
+  },
+  setForklift: (patch) => set({ forklift: { ...get().forklift, ...patch } }),
 
   select: (selection, opts) => {
     set({ selection, tab: selection ? 'detalle' : get().tab });
@@ -93,6 +132,7 @@ export const useStore = create<AppState>((set, get) => ({
     // Un inventario nuevo trae sus propias fechas de conteo: se descartan los conteos locales.
     storage.saveCounts({});
     set({ inventory, counts: {}, index: indexInventory(inventory, warehouse, {}), selection: null });
+    get().parkForklift();
     return saved;
   },
   resetToDemo: () => {
@@ -100,6 +140,7 @@ export const useStore = create<AppState>((set, get) => ({
     storage.saveCounts({});
     const inventory = buildDemoInventory(warehouse);
     set({ inventory, counts: {}, index: indexInventory(inventory, warehouse, {}), selection: null });
+    get().parkForklift();
   },
   registerCount: (code) => {
     const counts = { ...get().counts, [code]: todayIso() };

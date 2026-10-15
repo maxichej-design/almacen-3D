@@ -3,6 +3,7 @@ import { generalView } from './cameraPaths';
 import { useStore } from '../state/store';
 import { Building } from './Building';
 import { CameraRig } from './CameraRig';
+import { Forklift } from './Forklift';
 import { Highlights } from './Highlights';
 import { Loads } from './Loads';
 import { LocationPicker } from './LocationPicker';
@@ -49,6 +50,7 @@ export function WarehouseScene() {
       <Racks />
       <Loads />
       <Zones />
+      <Forklift />
       <LocationPicker />
       <Highlights />
       <CameraRig />
