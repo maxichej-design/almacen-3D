@@ -1,3 +1,4 @@
+import { qadLocationIndex } from '../../domain/inventory';
 import { daysSince, fifoRank, formatDate } from '../../domain/inventory';
 import type { StockRecord } from '../../domain/types';
 import { ABC_COLORS } from '../../scene/palette';
@@ -50,7 +51,7 @@ export function RecordList({ records }: { records: StockRecord[] }) {
               <dt>FIFO</dt>
               <dd>
                 {!fifo ? (
-                  <span className="muted">Fuera del FIFO (ya salió del almacén)</span>
+                  <span className="muted">Fuera del FIFO del almacén{qadLocationIndex.get(r.location) ? ` · ${qadLocationIndex.get(r.location)!.desc}` : ' (WIP / expedición)'}</span>
                 ) : fifo.total > 1 ? (
                   <span className={fifo.rank === 1 ? 'fifo first' : 'fifo'}>
                     {fifo.rank === 1 ? 'Sale primero' : `Posición ${fifo.rank}`} de {fifo.total}

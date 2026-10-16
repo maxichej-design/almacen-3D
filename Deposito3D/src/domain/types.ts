@@ -116,6 +116,8 @@ export type Selection =
   | { kind: 'row'; id: string }
   | { kind: 'zone'; code: string }
   | { kind: 'part'; partNumber: string }
+  /** Ubicación de QAD fuera del modelo 3D (despacho, materia prima, calidad...). */
+  | { kind: 'qadloc'; code: string }
   | null;
 
 export type ColorMode = 'ocupacion' | 'abc' | 'antiguedad' | 'conteo';

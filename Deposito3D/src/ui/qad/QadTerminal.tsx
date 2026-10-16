@@ -129,12 +129,12 @@ export function QadTerminal() {
       const ub = normalizeLocation(v.ubicac ?? '');
       const pn = (v.producto ?? '').trim().toUpperCase();
       const rows: StockRecord[] = [];
-      for (const s of index.byLocation.values())
-        for (const r of s.records) {
-          if (ub && !r.location.startsWith(ub)) continue;
-          if (pn && !r.partNumber.toUpperCase().startsWith(pn)) continue;
-          rows.push(r);
-        }
+      const all = [...[...index.byLocation.values()].flatMap((s) => s.records), ...[...index.offModel.values()].flat()];
+      for (const r of all) {
+        if (ub && !r.location.startsWith(ub)) continue;
+        if (pn && !r.partNumber.toUpperCase().startsWith(pn)) continue;
+        rows.push(r);
+      }
       rows.sort((a, b) => a.location.localeCompare(b.location, 'es', { numeric: true }) || a.partNumber.localeCompare(b.partNumber));
       setResults(rows);
       setCursor(0);
@@ -259,7 +259,11 @@ export function QadTerminal() {
 
   const verEn3D = (r?: StockRecord) => {
     if (!r) return;
-    const sel = wh.locationIndex.has(r.location) ? { kind: 'location' as const, code: r.location } : { kind: 'zone' as const, code: r.location };
+    const sel = wh.locationIndex.has(r.location)
+      ? { kind: 'location' as const, code: r.location }
+      : wh.zoneIndex.has(r.location)
+        ? { kind: 'zone' as const, code: r.location }
+        : { kind: 'qadloc' as const, code: r.location };
     close();
     select(sel, { fly: true });
   };

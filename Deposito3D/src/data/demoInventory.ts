@@ -105,5 +105,8 @@ export function buildDemoInventory(wh: Warehouse): Inventory {
     }
   }
 
+  // Algo de stock en ubicaciones de QAD que no están en el 3D (despacho, materia prima, calidad).
+  for (const code of ['L1', 'PA3', 'A1.QC', 'W9.SHIP', 'P1', 'DIF']) records.push(makeRecord(code, pick(weighted)));
+
   return { source: 'demo', label: 'Datos de demostración (ficticios)', loadedAt: today, records };
 }

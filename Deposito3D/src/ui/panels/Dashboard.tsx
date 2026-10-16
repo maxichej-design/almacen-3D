@@ -130,11 +130,26 @@ export function Dashboard() {
         </table>
       </section>
 
+      {index.offModel.size > 0 && (
+        <section>
+          <h3>Stock en otras ubicaciones de QAD</h3>
+          <p className="muted small">
+            {[...index.offModel.values()].reduce((a, l) => a + l.length, 0)} registros en ubicaciones que no son estanterías del 3D
+            (despachos, materia prima, calidad, proveedores…). Se pueden buscar por código.
+          </p>
+          <p className="chips">
+            {[...index.offModel.keys()].slice(0, 40).map((c) => (
+              <button key={c} className="chip" onClick={() => select({ kind: 'qadloc', code: c })}>{c}</button>
+            ))}
+          </p>
+        </section>
+      )}
+
       {k.unknownRecs > 0 && (
         <section>
           <h3>⚠ Ubicaciones que no están en el layout</h3>
           <p className="muted small">
-            {k.unknownRecs} registros del reporte usan códigos que el modelo 3D todavía no tiene. Hay que agregarlos al layout.
+            {k.unknownRecs} registros del reporte usan códigos que no están ni en el 3D ni en el listado de ubicaciones de QAD. Revisar si son ubicaciones nuevas.
           </p>
           <p className="chips">
             {[...index.unknown.keys()].slice(0, 40).map((c) => (

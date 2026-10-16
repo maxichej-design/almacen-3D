@@ -1,5 +1,6 @@
 import { layout, RACK_SPEC } from '../../config/layout';
-import { daysSince, formatDate, type LocationSummary } from '../../domain/inventory';
+import { OUTSIDE_FIFO_GROUPS, QAD_GROUP_LABEL } from '../../config/qadLocations';
+import { daysSince, formatDate, qadLocationIndex, type LocationSummary } from '../../domain/inventory';
 import type { RackRow, Zone } from '../../domain/types';
 import { ABC_COLORS, ABC_LABEL, COUNT_COLORS, COUNT_ICON, COUNT_LABEL, OCCUPANCY, tintFor } from '../../scene/palette';
 import { ZONE_COLORS } from '../../scene/Zones';
@@ -24,7 +25,36 @@ export function DetailPanel() {
     }
     case 'part':
       return <PartDetail pn={selection.partNumber} />;
+    case 'qadloc':
+      return <QadLocDetail code={selection.code} />;
   }
+}
+
+/** Ubicación de QAD que no está dibujada en el 3D (despacho, materia prima, calidad...). */
+function QadLocDetail({ code }: { code: string }) {
+  const loc = qadLocationIndex.get(code);
+  const records = useStore((s) => s.index.offModel.get(code));
+  const select = useStore((s) => s.select);
+  if (!loc) return <Empty />;
+  return (
+    <div className="pad">
+      <Head kicker="Ubicación de QAD · fuera del modelo 3D" title={loc.code} onClose={() => select(null)} />
+      <p className="lead">{loc.desc}</p>
+      <dl className="grid">
+        <dt>Tipo</dt><dd>{QAD_GROUP_LABEL[loc.group]}</dd>
+        <dt>Estado QAD</dt><dd>{loc.status || '—'}</dd>
+        <dt>FIFO</dt><dd>{OUTSIDE_FIFO_GROUPS.includes(loc.group) ? 'No cuenta para el FIFO del almacén' : 'Cuenta para el FIFO'}</dd>
+      </dl>
+      {records?.length ? (
+        <>
+          <h3>Contenido ({records.length})</h3>
+          <RecordList records={records} />
+        </>
+      ) : (
+        <p className="muted">Sin stock en el reporte cargado.</p>
+      )}
+    </div>
+  );
 }
 
 function Empty() {

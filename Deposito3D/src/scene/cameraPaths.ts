@@ -117,5 +117,7 @@ export function viewForSelection(wh: Warehouse, index: InventoryIndex, sel: Sele
       return zoneView(wh, sel.code);
     case 'part':
       return partView(wh, index, sel.partNumber);
+    case 'qadloc':
+      return [];
   }
 }

@@ -1,5 +1,10 @@
 import { AGE_BUCKETS, COUNT_INTERVAL_DAYS, COUNT_WARNING_DAYS } from '../config/policies';
+import { OUTSIDE_FIFO_GROUPS, QAD_LOCATIONS, type QadLocation } from '../config/qadLocations';
 import type { AbcClass, CountStatus, Inventory, StockRecord, Warehouse } from './types';
+import { normalizeLocation } from './warehouse';
+
+/** Ubicaciones de QAD fuera del modelo 3D (despachos, materia prima, calidad...), por código normalizado. */
+export const qadLocationIndex = new Map<string, QadLocation>(QAD_LOCATIONS.map((l) => [normalizeLocation(l.code), l]));
 
 const DAY = 86_400_000;
 
@@ -105,7 +110,9 @@ export interface InventoryIndex {
   today: string;
   byLocation: Map<string, LocationSummary>;
   byPart: Map<string, PartSummary>;
-  /** Códigos del reporte que no existen en el layout (ni estantería ni zona). */
+  /** Stock en ubicaciones de QAD que no están en el modelo 3D (despachos, materia prima, calidad...). */
+  offModel: Map<string, StockRecord[]>;
+  /** Códigos del reporte que no existen ni en el layout ni en el listado de ubicaciones de QAD. */
   unknown: Map<string, StockRecord[]>;
 }
 
@@ -118,11 +125,13 @@ export function indexInventory(
 ): InventoryIndex {
   const grouped = new Map<string, StockRecord[]>();
   const unknown = new Map<string, StockRecord[]>();
+  const offModel = new Map<string, StockRecord[]>();
   const parts = new Map<string, PartSummary>();
 
   for (const r of inv.records) {
     const known = wh.locationIndex.has(r.location) || wh.zoneIndex.has(r.location);
-    const target = known ? grouped : unknown;
+    const qadLoc = known ? undefined : qadLocationIndex.get(r.location);
+    const target = known ? grouped : qadLoc ? offModel : unknown;
     const list = target.get(r.location);
     if (list) list.push(r);
     else target.set(r.location, [r]);
@@ -133,7 +142,7 @@ export function indexInventory(
       parts.set(r.partNumber, p);
     }
     const zoneKind = wh.zoneIndex.get(r.location)?.kind;
-    if (zoneKind === 'wip' || zoneKind === 'expedicion') {
+    if (zoneKind === 'wip' || zoneKind === 'expedicion' || (qadLoc && OUTSIDE_FIFO_GROUPS.includes(qadLoc.group))) {
       p.outside.push(r);
     } else {
       p.totalQty += r.qty;
@@ -163,7 +172,7 @@ export function indexInventory(
     });
   }
 
-  return { today, byLocation, byPart: parts, unknown };
+  return { today, byLocation, byPart: parts, offModel, unknown };
 }
 
 /** Posición FIFO de un registro dentro de su número de parte (1 = sale primero); null si está fuera del FIFO. */

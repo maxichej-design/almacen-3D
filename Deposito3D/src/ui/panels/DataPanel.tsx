@@ -1,3 +1,4 @@
+import { qadLocationIndex } from '../../domain/inventory';
 import { useMemo, useState } from 'react';
 import { readCsv, toCsv } from '../../data/import/csv';
 import { detectColumns, FIELDS, rowsToRecords, type ColumnMapping, type FieldKey } from '../../data/import/mapping';
@@ -79,7 +80,7 @@ export function DataPanel() {
     const codes = new Set(conv.records.map((r) => r.location));
     let known = 0;
     let unknown = 0;
-    for (const c of codes) (wh.locationIndex.has(c) || wh.zoneIndex.has(c) ? known++ : unknown++);
+    for (const c of codes) (wh.locationIndex.has(c) || wh.zoneIndex.has(c) || qadLocationIndex.has(c) ? known++ : unknown++);
     return { ...conv, distinct: codes.size, known, unknown };
   }, [loaded, rows, headerRow, mapping, skipZero, wh]);
 

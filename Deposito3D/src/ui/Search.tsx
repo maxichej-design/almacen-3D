@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { normalizeLocation } from '../domain/warehouse';
+import { qadLocationIndex } from '../domain/inventory';
 import type { Selection } from '../domain/types';
 import { useStore } from '../state/store';
 
@@ -55,6 +56,14 @@ export function Search() {
     for (const z of wh.zones) {
       if (z.code.startsWith(query.toUpperCase()) || z.name.toLowerCase().includes(query.toLowerCase())) {
         out.push({ key: `z-${z.code}`, title: z.code, subtitle: z.name, selection: { kind: 'zone', code: z.code } });
+      }
+    }
+    // Otras ubicaciones de QAD (despachos, materia prima, calidad...): fuera del modelo 3D.
+    for (const [c, l] of qadLocationIndex) {
+      if (out.length > 8) break;
+      if (c === code || (query.length >= 2 && l.desc.toLowerCase().includes(query.toLowerCase()))) {
+        const n = index.offModel.get(c)?.length ?? 0;
+        out.push({ key: `q-${c}`, title: l.code, subtitle: `${l.desc} · fuera del 3D${n ? ` · ${n} registro(s)` : ''}`, selection: { kind: 'qadloc', code: c } });
       }
     }
     // Referencia de tarima (la etiqueta que se escanea): lleva directo a su ubicación.
