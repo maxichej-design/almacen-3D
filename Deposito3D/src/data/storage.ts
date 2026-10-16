@@ -7,6 +7,7 @@ import type { Inventory } from '../domain/types';
 
 const KEY_INV = 'deposito3d.inventory.v1';
 const KEY_COUNTS = 'deposito3d.counts.v1';
+const KEY_QUALITY = 'deposito3d.quality.v1';
 
 function read<T>(key: string): T | null {
   try {
@@ -31,4 +32,6 @@ export const storage = {
   saveInventory: (inv: Inventory | null) => write(KEY_INV, inv),
   loadCounts: () => read<Record<string, string>>(KEY_COUNTS) ?? {},
   saveCounts: (c: Record<string, string>) => write(KEY_COUNTS, c),
+  loadQuality: () => read<string>(KEY_QUALITY),
+  saveQuality: (q: string) => write(KEY_QUALITY, q),
 };

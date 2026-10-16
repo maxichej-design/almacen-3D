@@ -2,9 +2,9 @@ import { useMemo, useRef } from 'react';
 import type * as THREE from 'three';
 import { layout } from '../config/layout';
 import { useStore } from '../state/store';
-import { VISUAL } from '../config/visual';
+import { QUALITY } from '../config/visual';
 import type { ColorMode, RackLocation } from '../domain/types';
-import { DetailedPallet } from './DetailedPallet';
+import { addPallet, emptyParts, filmFor, PartsMeshes } from './DetailedPallet';
 import type { LocationSummary } from '../domain/inventory';
 import { useBoxInstances, type BoxInstance } from './instancing';
 import { SCENE, tintFor } from './palette';
@@ -72,14 +72,6 @@ export function palletVisuals(loc: RackLocation, sum: LocationSummary, mode: Col
   return out;
 }
 
-export const LOAD_MAPS: Record<LoadKind, () => THREE.Texture> = {
-  carton: cartonTexture,
-  plastico: cartonTexture,
-  klt: kltTexture,
-  film: cartonTexture,
-  cajon: crateTexture,
-};
-export const LOAD_ROUGHNESS: Record<LoadKind, number> = { carton: 0.85, plastico: 0.85, klt: 0.6, film: 0.35, cajon: 0.7 };
 export { PALLET, CRATE };
 
 /**
@@ -92,8 +84,10 @@ export function Loads() {
   const mode = useStore((s) => s.colorMode);
   // Pallet que sacó la apiladora: no se dibuja en la estantería.
   const lifted = useStore((s) => s.forklift.lifted);
+  const detailed = useStore((s) => QUALITY[s.quality].detailedLoads);
 
   const groups = useMemo(() => {
+    if (detailed) return null;
     const g: Record<'palletWood' | 'palletPlastic' | LoadKind | 'free', BoxInstance[]> = {
       palletWood: [], palletPlastic: [], carton: [], plastico: [], klt: [], film: [], cajon: [], free: [],
     };
@@ -110,7 +104,6 @@ export function Loads() {
       }
       for (const v of palletVisuals(loc, sum, mode)) {
         if (lifted && lifted.code === loc.code && lifted.slot === v.slot) continue;
-        if (loc.code === VISUAL.showcase) continue; // se dibuja con el pallet detallado
         if (v.kind === 'cajon') {
           g.cajon.push({ position: [v.x, loc.baseY + CRATE.h / 2, z], scale: [CRATE.w, CRATE.h, CRATE.d], color: v.loadColor });
           continue;
@@ -128,11 +121,11 @@ export function Loads() {
       }
     }
     return g;
-  }, [wh, index, mode, lifted]);
+  }, [wh, index, mode, lifted, detailed]);
 
+  if (detailed || !groups) return <RealisticLoads />;
   return (
     <group>
-      <Showcase />
       <Instanced items={groups.palletWood} map={palletTexture()} roughness={0.9} />
       <Instanced items={groups.palletPlastic} map={palletTexture()} roughness={0.5} />
       <Instanced items={groups.carton} map={cartonTexture()} roughness={0.85} />
@@ -145,31 +138,30 @@ export function Loads() {
   );
 }
 
-/** Etapa 1 de la mejora gráfica: una ubicación con pallets detallados (film normal y abundante). */
-function Showcase() {
+/**
+ * Modo realista: todos los pallets con tablas, cajas individuales y film, juntados en pocos
+ * InstancedMesh (uno por tipo de pieza) para que el recorrido siga fluido.
+ */
+function RealisticLoads() {
   const wh = useStore((s) => s.warehouse);
-  const sum = useStore((s) => s.index.byLocation.get(VISUAL.showcase));
+  const index = useStore((s) => s.index);
   const mode = useStore((s) => s.colorMode);
   const lifted = useStore((s) => s.forklift.lifted);
-  const loc = wh.locationIndex.get(VISUAL.showcase);
-  if (!loc || !sum) return null;
-  const tint = tintFor(sum, mode);
-  return (
-    <group>
-      {palletVisuals(loc, sum, mode).map((v) =>
-        lifted && lifted.code === loc.code && lifted.slot === v.slot ? null : (
-          <group key={v.slot} position={[v.x, loc.baseY, loc.position[2]]}>
-            <DetailedPallet
-              visual={v.kind === 'cajon' ? { ...v, kind: 'carton', pallet: 'wood' } : v}
-              seedKey={`${loc.code}#${v.slot}`}
-              film={v.slot === 0 ? 'normal' : 'abundante'}
-              tint={tint ?? null}
-            />
-          </group>
-        ),
-      )}
-    </group>
-  );
+  const parts = useMemo(() => {
+    const out = emptyParts();
+    for (const loc of wh.locations) {
+      const sum = index.byLocation.get(loc.code);
+      if (!sum) continue;
+      const tint = tintFor(sum, mode) ?? null;
+      for (const v of palletVisuals(loc, sum, mode)) {
+        if (lifted && lifted.code === loc.code && lifted.slot === v.slot) continue;
+        const key = `${loc.code}#${v.slot}`;
+        addPallet(out, v, key, filmFor(v.kind, key), tint, [v.x, loc.baseY, loc.position[2]]);
+      }
+    }
+    return out;
+  }, [wh, index, mode, lifted]);
+  return <PartsMeshes parts={parts} />;
 }
 
 function Instanced({

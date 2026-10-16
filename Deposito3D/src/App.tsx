@@ -3,6 +3,7 @@ import { WarehouseScene } from './scene/WarehouseScene';
 import { About } from './ui/About';
 import { Legend } from './ui/Legend';
 import { ForkliftHud } from './ui/ForkliftHud';
+import { Notice } from './ui/Notice';
 import { WalkHud } from './ui/WalkHud';
 import { Minimap } from './ui/Minimap';
 import { SidePanel } from './ui/SidePanel';
@@ -20,6 +21,7 @@ export default function App() {
           <Minimap />
           <WalkHud />
           <ForkliftHud />
+          <Notice />
         </div>
         <SidePanel />
       </main>

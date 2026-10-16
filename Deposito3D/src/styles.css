@@ -115,6 +115,12 @@ select, input { font: inherit; }
   background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2); font-weight: 600;
 }
 
+/* ---------- Aviso ---------- */
+.notice {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px);
+  background: rgba(15,23,42,.9); color: #e2e8f0; padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
+}
+
 /* ---------- Apiladora ---------- */
 .fork-hud {
   position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px;

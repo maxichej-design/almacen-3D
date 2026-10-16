@@ -1,5 +1,6 @@
 import { COLOR_MODES } from '../scene/palette';
 import { useStore } from '../state/store';
+import { QUALITY, type Quality } from '../config/visual';
 import { Search } from './Search';
 
 export function Toolbar({ onAbout }: { onAbout: () => void }) {
@@ -11,6 +12,8 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
   const showLabels = useStore((s) => s.showLabels);
   const setShowLabels = useStore((s) => s.setShowLabels);
   const source = useStore((s) => s.inventory.source);
+  const quality = useStore((s) => s.quality);
+  const setQuality = useStore((s) => s.setQuality);
 
   return (
     <header className="toolbar">
@@ -32,6 +35,16 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
           {COLOR_MODES.map((m) => (
             <option key={m.id} value={m.id}>
               {m.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="select" title="Calidad gráfica: si la PC va lenta, bajala">
+        <span>Gráficos</span>
+        <select value={quality} onChange={(e) => setQuality(e.target.value as Quality)}>
+          {(Object.keys(QUALITY) as Quality[]).map((k) => (
+            <option key={k} value={k}>
+              {QUALITY[k].label}
             </option>
           ))}
         </select>

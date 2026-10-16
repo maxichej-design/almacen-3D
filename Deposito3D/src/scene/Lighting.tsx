@@ -11,7 +11,7 @@ import { useStore } from '../state/store';
  * - Luz ambiente de cielo/piso para que los pasillos no queden oscuros.
  * - Algunas luces puntuales sobre los pasillos, sin sombras, para dar "pozos" de luz.
  */
-export function Lighting({ span, cx, cz }: { span: number; cx: number; cz: number }) {
+export function Lighting({ span, cx, cz, shadowMap }: { span: number; cx: number; cz: number; shadowMap: number }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const aisles = useStore((s) => s.warehouse.aisles);
@@ -48,7 +48,8 @@ export function Lighting({ span, cx, cz }: { span: number; cx: number; cz: numbe
         intensity={2.3}
         color="#fffaf2"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        key={shadowMap}
+        shadow-mapSize={[shadowMap, shadowMap]}
         shadow-camera-left={-span * 0.6}
         shadow-camera-right={span * 0.6}
         shadow-camera-top={span * 0.6}

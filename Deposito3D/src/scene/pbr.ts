@@ -422,3 +422,104 @@ export const filmRollMaterial = () =>
 
 /** Material invisible para la cara de abajo del film (el film no cierra por debajo). */
 export const hiddenMaterial = () => once('hidden', () => new THREE.MeshBasicMaterial({ visible: false }));
+
+// ---------------------------------------------------------------- Estanterías (pintura industrial)
+
+/** Rayones y marcas de uso, muy sutiles (escala de grises para multiplicar el color). */
+function scuffs(c: CanvasRenderingContext2D, w: number, h: number, r: () => number, n: number) {
+  for (let i = 0; i < n; i++) {
+    const x = r() * w;
+    const y = r() * h;
+    c.strokeStyle = r() > 0.4 ? `rgba(0,0,0,${0.08 + r() * 0.15})` : `rgba(255,255,255,${0.1 + r() * 0.2})`;
+    c.lineWidth = 0.6 + r() * 1.2;
+    c.beginPath();
+    c.moveTo(x, y);
+    c.lineTo(x + (r() - 0.5) * 30, y + (r() - 0.5) * 6);
+    c.stroke();
+  }
+}
+
+/** Parante: perforaciones en dos columnas (cada 5 cm) + rayones. La textura cubre 0,6 m de alto. */
+export const uprightMaps = () =>
+  once('parante', () => {
+    const W = 64;
+    const H = 512;
+    const r = rng(71);
+    const map = canvasTex(W, H, (c) => {
+      c.fillStyle = '#ffffff';
+      c.fillRect(0, 0, W, H);
+      // Pliegues del perfil (sombra en los bordes, brillo en el centro).
+      const g = c.createLinearGradient(0, 0, W, 0);
+      g.addColorStop(0, 'rgba(0,0,0,0.35)');
+      g.addColorStop(0.18, 'rgba(0,0,0,0)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.12)');
+      g.addColorStop(0.82, 'rgba(0,0,0,0)');
+      g.addColorStop(1, 'rgba(0,0,0,0.35)');
+      c.fillStyle = g;
+      c.fillRect(0, 0, W, H);
+      // Perforaciones (ranuras en forma de gota) en dos columnas.
+      c.fillStyle = '#0b0f1a';
+      for (let y = 6; y < H; y += 42) {
+        for (const x of [16, 44]) {
+          c.beginPath();
+          c.ellipse(x, y + 8, 3.2, 8, 0, 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+      scuffs(c, W, H, r, 40);
+    });
+    map.repeat.set(1, 1);
+    return { map };
+  });
+
+/** Larguero: perfil escalonado (brillo arriba, sombra abajo), rayones y pequeños saltos de pintura. */
+export const beamMaps = () =>
+  once('larguero', () => {
+    const W = 512;
+    const H = 64;
+    const r = rng(73);
+    const map = canvasTex(W, H, (c) => {
+      c.fillStyle = '#ffffff';
+      c.fillRect(0, 0, W, H);
+      const g = c.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, 'rgba(255,255,255,0.25)');
+      g.addColorStop(0.12, 'rgba(255,255,255,0.05)');
+      g.addColorStop(0.45, 'rgba(0,0,0,0)');
+      g.addColorStop(0.5, 'rgba(0,0,0,0.25)');
+      g.addColorStop(0.56, 'rgba(255,255,255,0.12)');
+      g.addColorStop(1, 'rgba(0,0,0,0.3)');
+      c.fillStyle = g;
+      c.fillRect(0, 0, W, H);
+      scuffs(c, W, H, r, 90);
+      // Saltos de pintura (metal gris a la vista), pocos.
+      for (let i = 0; i < 8; i++) {
+        c.fillStyle = 'rgba(80,80,80,0.55)';
+        c.fillRect(r() * W, r() * H, 1 + r() * 3, 1 + r() * 2);
+      }
+    });
+    return { map };
+  });
+
+/** Placa de conexión del larguero: ranuras y dos bulones. */
+export const connectorMap = () =>
+  once('conector', () =>
+    canvasTex(64, 128, (c) => {
+      c.fillStyle = '#ffffff';
+      c.fillRect(0, 0, 64, 128);
+      c.fillStyle = 'rgba(0,0,0,0.25)';
+      c.fillRect(0, 0, 4, 128);
+      c.fillRect(60, 0, 4, 128);
+      c.fillStyle = '#1a1a1a';
+      for (const y of [40, 56, 72, 88]) c.fillRect(28, y, 8, 9);
+      for (const y of [18, 108]) {
+        const g = c.createRadialGradient(32, y, 1, 32, y, 10);
+        g.addColorStop(0, '#f1f5f9');
+        g.addColorStop(0.6, '#9ca3af');
+        g.addColorStop(1, '#4b5563');
+        c.fillStyle = g;
+        c.beginPath();
+        c.arc(32, y, 9, 0, Math.PI * 2);
+        c.fill();
+      }
+    }),
+  );

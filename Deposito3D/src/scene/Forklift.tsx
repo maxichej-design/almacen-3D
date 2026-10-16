@@ -2,13 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Billboard } from '@react-three/drei';
 import * as THREE from 'three';
+import { layout } from '../config/layout';
 import type { Aisle, RackLocation, Warehouse } from '../domain/types';
 import { useStore } from '../state/store';
 import type { CameraKeyframe } from './cameraPaths';
 import { Label } from './Label';
-import { CRATE, LOAD_MAPS, LOAD_ROUGHNESS, PALLET, palletVisuals, type PalletVisual } from './Loads';
-import { SCENE } from './palette';
-import { forkliftSideTexture, mastBrandTexture, palletTexture } from './textures';
+import { PALLET, palletVisuals, type PalletVisual } from './Loads';
+import { tintFor } from './palette';
+import { DetailedPallet, filmFor } from './DetailedPallet';
+import { forkliftSideTexture, mastBrandTexture } from './textures';
 
 /*
  * Apiladora retráctil Hangcha (batería de litio, proveedor Carbone), como la del depósito.
@@ -19,13 +21,19 @@ import { forkliftSideTexture, mastBrandTexture, palletTexture } from './textures
 const BLACK = '#17191b';
 const STEEL = '#26292c';
 const BODY = { x0: -1.15, x1: -0.05, w: 1.1, h: 1.05 };
-const LEGS = { x0: -0.1, x1: 0.9, h: 0.2, z: 0.47 };
 const MAST_X = 0.1; // frente del mástil con el carro retraído
 const MAST_H = 2.6;
-const FORK = { x0: 0.08, len: 1.15 };
+/** Uñas del mismo largo que el pallet (1,2 m). */
+const FORK = { x0: 0.08, len: 1.2 };
+/**
+ * Brazos portantes: llegan justo hasta la punta de las uñas retraídas, así el pallet sacado de la
+ * estantería queda entero sobre ellos (por dentro de los brazos) antes de bajarlo.
+ */
+const LEGS = { x0: -0.1, x1: MAST_X + FORK.x0 + FORK.len + 0.02, h: 0.2, z: 0.58 };
 /** Centro del pallet sobre las horquillas, medido desde el mástil. */
 const LOAD_CX = FORK.x0 + PALLET.d / 2;
-const REACH_MAX = 0.65;
+/** Distancia que deja la punta de los brazos antes del frente de la estantería (la línea amarilla). */
+const LINE_GAP = 0.12;
 /** El pallet apoya 5 cm por debajo de la cara de arriba de las horquillas al entrar. */
 const FORK_IN = 0.05;
 
@@ -151,30 +159,15 @@ function parkingPose(wh: Warehouse): Pose {
 
 const noRaycast = () => null;
 
-/** Un pallet con su carga. Origen: centro de la base; el lado de 1,2 m va sobre X local. */
-function PalletModel({ v }: { v: PalletVisual }) {
-  if (v.kind === 'cajon') {
-    return (
-      <mesh position={[0, CRATE.h / 2, 0]} castShadow raycast={noRaycast}>
-        <boxGeometry args={[CRATE.d, CRATE.h, CRATE.w]} />
-        <meshStandardMaterial color={v.loadColor} map={LOAD_MAPS.cajon()} roughness={0.7} />
-      </mesh>
-    );
-  }
+/** El pallet detallado (el mismo que estaba en la estantería), girado para ir sobre las uñas. */
+function LoadedPallet({ v, seedKey }: { v: PalletVisual; seedKey: string }) {
+  const mode = useStore((s) => s.colorMode);
+  const code = seedKey.split('#')[0];
+  const sum = useStore((s) => s.index.byLocation.get(code));
+  const tint = sum ? (tintFor(sum, mode) ?? null) : null;
   return (
-    <group>
-      <mesh position={[0, PALLET.h / 2, 0]} castShadow raycast={noRaycast}>
-        <boxGeometry args={[PALLET.d, PALLET.h, PALLET.w]} />
-        <meshStandardMaterial
-          color={v.pallet === 'plastic' ? SCENE.palletPlastic : SCENE.palletWood}
-          map={palletTexture()}
-          roughness={0.85}
-        />
-      </mesh>
-      <mesh position={[0, PALLET.h + v.loadH / 2, 0]} castShadow raycast={noRaycast}>
-        <boxGeometry args={[PALLET.d - 0.06, v.loadH, PALLET.w - 0.06]} />
-        <meshStandardMaterial color={v.loadColor} map={LOAD_MAPS[v.kind]()} roughness={LOAD_ROUGHNESS[v.kind]} />
-      </mesh>
+    <group rotation={[0, Math.PI / 2, 0]}>
+      <DetailedPallet visual={v} seedKey={seedKey} film={filmFor(v.kind, seedKey)} tint={tint} />
     </group>
   );
 }
@@ -269,16 +262,45 @@ function Chassis({ beacon }: { beacon: React.RefObject<THREE.MeshStandardMateria
       ))}
       <Wheel position={[-0.75, 0.17, 0.25]} r={0.17} w={0.14} />
       <Wheel position={[-0.75, 0.17, -0.25]} r={0.12} w={0.1} />
-      {/* Luces en el piso: línea roja a los costados (zona de peligro) y punto azul atrás. */}
+      {/* Espejo retrovisor en el parante delantero. */}
+      <Box size={[0.03, 0.12, 0.2]} position={[BODY.x1 - 0.02, gy - 0.25, 0.62]} color="#2b2b2b" />
+      <mesh position={[BODY.x1 - 0.036, gy - 0.25, 0.62]} rotation={[0, -Math.PI / 2, 0]} raycast={noRaycast}>
+        <planeGeometry args={[0.17, 0.09]} />
+        <meshStandardMaterial color="#dfe6ee" metalness={1} roughness={0.04} />
+      </mesh>
+      <Box size={[0.03, 0.03, 0.16]} position={[BODY.x1 - 0.02, gy - 0.25, 0.53]} color="#2b2b2b" />
+    </group>
+  );
+}
+
+/**
+ * Luces de seguridad proyectadas en el piso (encendidas mientras trabaja): líneas rojas a los
+ * costados y adelante de los brazos (marcan el área de giro) y un punto azul atrás.
+ */
+function FloorLights({ group }: { group: React.RefObject<THREE.Group | null> }) {
+  const red = (
+    <meshBasicMaterial color="#ff2d2d" transparent opacity={0.85} toneMapped={false} depthWrite={false} />
+  );
+  return (
+    <group ref={group} visible={false}>
       {([1, -1] as const).map((s) => (
-        <mesh key={`z${s}`} position={[-0.3, 0.012, s * 0.95]} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast}>
-          <planeGeometry args={[1.6, 0.06]} />
-          <meshBasicMaterial color="#ff2d2d" transparent opacity={0.85} toneMapped={false} />
+        <mesh key={`z${s}`} position={[0.1, 0.013, s * 1.0]} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast}>
+          <planeGeometry args={[2.4, 0.07]} />
+          {red}
         </mesh>
       ))}
+      <mesh position={[LEGS.x1 + 0.45, 0.013, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]} raycast={noRaycast}>
+        <planeGeometry args={[2.0, 0.07]} />
+        {red}
+      </mesh>
+      <mesh position={[BODY.x0 - 1.4, 0.013, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast}>
+        <circleGeometry args={[0.3, 24]} />
+        <meshBasicMaterial color="#3b82f6" transparent opacity={0.8} toneMapped={false} depthWrite={false} />
+      </mesh>
+      {/* Halo del punto azul. */}
       <mesh position={[BODY.x0 - 1.4, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast}>
-        <circleGeometry args={[0.28, 24]} />
-        <meshBasicMaterial color="#3b82f6" transparent opacity={0.75} toneMapped={false} />
+        <circleGeometry args={[0.6, 24]} />
+        <meshBasicMaterial color="#3b82f6" transparent opacity={0.18} toneMapped={false} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -291,12 +313,14 @@ function Mast({
   stage3,
   carriage,
   carry,
+  carryKey,
 }: {
   outer: React.RefObject<THREE.Group | null>;
   stage2: React.RefObject<THREE.Group | null>;
   stage3: React.RefObject<THREE.Group | null>;
   carriage: React.RefObject<THREE.Group | null>;
   carry: PalletVisual | null;
+  carryKey: string;
 }) {
   const rail = (z: number, w: number, x: number, key: string) => (
     <Box key={key} size={[0.1, MAST_H, w]} position={[x, 0.05 + MAST_H / 2, z]} color={BLACK} />
@@ -336,7 +360,7 @@ function Mast({
         ))}
         {carry && (
           <group position={[LOAD_CX, -FORK_IN, 0]}>
-            <PalletModel v={carry} />
+            <LoadedPallet v={carry} seedKey={carryKey} />
           </group>
         )}
       </group>
@@ -371,6 +395,8 @@ export function Forklift() {
   const stage3 = useRef<THREE.Group>(null);
   const carriage = useRef<THREE.Group>(null);
   const beacon = useRef<THREE.MeshStandardMaterial>(null);
+  const floorLights = useRef<THREE.Group>(null);
+  const last = useRef({ x: 0, z: 0, yaw: 0, t: 0 });
 
   /** Pallet que se está manipulando (para dibujarlo en el piso). */
   const liftedVisual = useMemo(() => {
@@ -416,8 +442,10 @@ export function Forklift() {
     const az = aisle.centerZ;
     const locZ = loc.position[2];
     const px = v.x;
-    // Frente a la estantería, a la distancia justa para que con el carro adelantado el pallet quede centrado.
-    const zFront = locZ + f * (MAST_X + LOAD_CX + REACH_MAX);
+    // Se acerca hasta que la punta de los brazos queda sobre la línea amarilla, sin meterse en la
+    // estantería; solo el mástil avanza (retráctil) para que las uñas entren debajo del pallet.
+    const zFront = locZ + f * (layout.rack.depth / 2 + LINE_GAP + LEGS.x1);
+    const reachPick = Math.abs(zFront - locZ) - MAST_X - LOAD_CX;
     // El pallet se deja hacia el centro del pasillo, y la apiladora retrocede hacia el otro lado.
     const d = px < (aisle.x0 + aisle.x1) / 2 ? 1 : -1;
     const backOff = 3.5;
@@ -451,7 +479,7 @@ export function Forklift() {
     status(levelTxt);
     plan.liftTo(pickY);
     status('Entra con las horquillas');
-    plan.reachTo(REACH_MAX);
+    plan.reachTo(reachPick);
     plan.call(() => {
       setCarry(v);
       useStore.getState().setForklift({ lifted: { code, slot: v.slot } });
@@ -513,21 +541,31 @@ export function Forklift() {
     if (stage2.current) stage2.current.position.y = ext / 2;
     if (stage3.current) stage3.current.position.y = ext / 2;
     if (carriage.current) carriage.current.position.y = p.lift;
+    // La baliza titila mientras la apiladora se mueve (avanza o gira).
+    const l = last.current;
+    const moved = Math.abs(p.x - l.x) + Math.abs(p.z - l.z) + Math.abs(p.yaw - l.yaw) > 1e-4;
+    if (moved) l.t = state.clock.elapsedTime;
+    l.x = p.x;
+    l.z = p.z;
+    l.yaw = p.yaw;
+    const moving = state.clock.elapsedTime - l.t < 0.25;
     if (beacon.current) {
-      const on = busy && Math.sin(state.clock.elapsedTime * 9) > 0;
-      beacon.current.emissiveIntensity = on ? 3 : 0.5;
+      const on = moving && Math.sin(state.clock.elapsedTime * 12) > 0;
+      beacon.current.emissiveIntensity = on ? 4 : busy ? 0.8 : 0.3;
     }
+    if (floorLights.current) floorLights.current.visible = busy;
   });
 
   return (
     <group>
       <group ref={root}>
         <Chassis beacon={beacon} />
-        <Mast outer={outer} stage2={stage2} stage3={stage3} carriage={carriage} carry={carry} />
+        <FloorLights group={floorLights} />
+        <Mast outer={outer} stage2={stage2} stage3={stage3} carriage={carriage} carry={carry} carryKey={lifted ? `${lifted.code}#${lifted.slot}` : ''} />
       </group>
       {onFloor && liftedVisual && lifted && (
         <group position={[onFloor.x, 0, onFloor.z]} rotation={[0, onFloor.yaw, 0]}>
-          <PalletModel v={liftedVisual} />
+          <LoadedPallet v={liftedVisual} seedKey={`${lifted.code}#${lifted.slot}`} />
           {/* Zona tocable (un poco más grande que el pallet). */}
           <mesh
             position={[0, (liftedVisual.loadH + PALLET.h) / 2, 0]}

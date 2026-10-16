@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import type * as THREE from 'three';
 import { layout } from '../config/layout';
@@ -8,6 +8,54 @@ import { useBoxInstances, type BoxInstance } from './instancing';
 import { Label } from './Label';
 import { SCENE } from './palette';
 import { specPlateTexture, stripTexture } from './textures';
+import { beamMaps, connectorMap, uprightMaps } from './pbr';
+import * as THREE_ from 'three';
+
+const unitBox = new THREE_.BoxGeometry(1, 1, 1);
+
+/** Barra entre dos puntos (diagonales del bastidor). */
+interface BraceInstance {
+  a: [number, number, number];
+  b: [number, number, number];
+}
+
+const _m = new THREE_.Matrix4();
+const _q = new THREE_.Quaternion();
+const _p = new THREE_.Vector3();
+const _s = new THREE_.Vector3();
+const _d = new THREE_.Vector3();
+const _x = new THREE_.Vector3(0, 1, 0);
+
+function useBraceInstances(ref: React.RefObject<THREE.InstancedMesh | null>, items: BraceInstance[]) {
+  useLayoutEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    items.forEach((it, i) => {
+      _d.set(it.b[0] - it.a[0], it.b[1] - it.a[1], it.b[2] - it.a[2]);
+      const len = _d.length();
+      _q.setFromUnitVectors(_x, _d.normalize());
+      _p.set((it.a[0] + it.b[0]) / 2, (it.a[1] + it.b[1]) / 2, (it.a[2] + it.b[2]) / 2);
+      _m.compose(_p, _q, _s.set(0.035, len, 0.035));
+      mesh.setMatrixAt(i, _m);
+    });
+    mesh.count = items.length;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [ref, items]);
+}
+
+/** Texturas de pintura industrial (compartidas por todas las filas). */
+function rackMaterials() {
+  if (!rackMatCache.upright) {
+    const upright = uprightMaps().map.clone();
+    // Todas las filas tienen la misma altura de parante: la perforación repite cada 0,6 m.
+    upright.repeat.set(1, ((layout.levels - 1) * layout.rack.levelHeight) / 0.6);
+    upright.needsUpdate = true;
+    rackMatCache.upright = upright;
+  }
+  return { upright: rackMatCache.upright, beam: beamMaps().map, plate: connectorMap() };
+}
+const rackMatCache: { upright?: THREE.Texture } = {};
 
 /** Píxeles de movimiento a partir de los cuales un clic se considera arrastre. */
 export const DRAG_PX = 5;
@@ -40,27 +88,53 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
   const us = dim.uprightSize;
   const frontZ = row.facing === 1 ? row.z1 : row.z0;
 
-  const { uprights, beams } = useMemo(() => {
+  const { uprights, braces, beams, plates } = useMemo(() => {
     const uprights: BoxInstance[] = [];
+    const braces: BraceInstance[] = [];
     const beams: BoxInstance[] = [];
+    const plates: BoxInstance[] = [];
     const uh = top;
+    const za = row.z0 + us / 2;
+    const zb = row.z1 - us / 2;
     for (const x of row.uprightsX) {
-      for (const z of [row.z0 + us / 2, row.z1 - us / 2]) uprights.push({ position: [x, uh / 2, z], scale: [us, uh, us] });
-      for (const y of [0.35, uh * 0.5, uh - 0.2])
-        uprights.push({ position: [x, y, (row.z0 + row.z1) / 2], scale: [0.04, 0.04, dim.depth - us] });
+      for (const z of [za, zb]) uprights.push({ position: [x, uh / 2, z], scale: [us, uh, us] });
+      // Bastidor: travesaños abajo y arriba, diagonales en zigzag entre medio (como la foto).
+      for (const y of [0.15, uh - 0.15]) braces.push({ a: [x, y, za], b: [x, y, zb] });
+      const n = 5;
+      const y0 = 0.15;
+      const step = (uh - 0.3) / n;
+      for (let i = 0; i < n; i++) {
+        const ya = y0 + i * step;
+        const yb = ya + step;
+        braces.push(i % 2 === 0 ? { a: [x, ya, za], b: [x, yb, zb] } : { a: [x, ya, zb], b: [x, yb, za] });
+      }
     }
+    // Largueros por módulo (entre parantes), con su placa de conexión en cada punta.
     for (let k = 1; k <= beamLevels; k++) {
       const y = k * dim.levelHeight;
-      for (const z of [row.z0 + us / 2, row.z1 - us / 2])
-        beams.push({ position: [(row.x0 + row.x1) / 2, y, z], scale: [length, dim.beamHeight, 0.05] });
+      for (let i = 0; i + 1 < row.uprightsX.length; i++) {
+        const xa = row.uprightsX[i] + us / 2;
+        const xb = row.uprightsX[i + 1] - us / 2;
+        for (const z of [row.z0 + us / 2, row.z1 - us / 2]) {
+          const face = z < (row.z0 + row.z1) / 2 ? -1 : 1;
+          beams.push({ position: [(xa + xb) / 2, y, z + face * 0.005], scale: [xb - xa - 0.1, dim.beamHeight, 0.05] });
+          for (const xe of [xa + 0.04, xb - 0.04])
+            plates.push({ position: [xe, y - 0.02, z + face * 0.03], scale: [0.08, 0.17, 0.012] });
+        }
+      }
     }
-    return { uprights, beams };
-  }, [row, top, length, us, dim]);
+    return { uprights, braces, beams, plates };
+  }, [row, top, us, dim, beamLevels]);
 
   const uRef = useRef<THREE.InstancedMesh>(null);
+  const brRef = useRef<THREE.InstancedMesh>(null);
   const bRef = useRef<THREE.InstancedMesh>(null);
+  const pRef = useRef<THREE.InstancedMesh>(null);
   useBoxInstances(uRef, uprights);
+  useBraceInstances(brRef, braces);
   useBoxInstances(bRef, beams);
+  useBoxInstances(pRef, plates);
+  const mats = rackMaterials();
 
   const frameColor = selected ? SCENE.frameSelected : hovered ? SCENE.frameHover : SCENE.upright;
   const beamColor = selected ? SCENE.frameSelected : SCENE.beam;
@@ -93,13 +167,17 @@ const RackFrame = memo(function RackFrame({ row }: { row: RackRow }) {
         }}
         onPointerOut={() => clearHover(h)}
       >
-        <instancedMesh ref={uRef} args={[undefined, undefined, uprights.length]} castShadow>
-          <boxGeometry />
-          <meshStandardMaterial color={frameColor} metalness={0.3} roughness={0.5} />
+        <instancedMesh ref={uRef} args={[unitBox, undefined, uprights.length]} castShadow receiveShadow>
+          <meshPhysicalMaterial color={frameColor} map={mats.upright} metalness={0.45} roughness={0.42} clearcoat={0.35} clearcoatRoughness={0.4} />
         </instancedMesh>
-        <instancedMesh ref={bRef} args={[undefined, undefined, beams.length]} castShadow>
-          <boxGeometry />
-          <meshStandardMaterial color={beamColor} metalness={0.2} roughness={0.55} />
+        <instancedMesh ref={brRef} args={[unitBox, undefined, braces.length]} castShadow receiveShadow>
+          <meshStandardMaterial color={frameColor} metalness={0.45} roughness={0.45} />
+        </instancedMesh>
+        <instancedMesh ref={bRef} args={[unitBox, undefined, beams.length]} castShadow receiveShadow>
+          <meshPhysicalMaterial color={beamColor} map={mats.beam} metalness={0.3} roughness={0.38} clearcoat={0.5} clearcoatRoughness={0.3} />
+        </instancedMesh>
+        <instancedMesh ref={pRef} args={[unitBox, undefined, plates.length]} castShadow raycast={noRaycast}>
+          <meshStandardMaterial color={beamColor} map={mats.plate} metalness={0.35} roughness={0.4} />
         </instancedMesh>
       </group>
 

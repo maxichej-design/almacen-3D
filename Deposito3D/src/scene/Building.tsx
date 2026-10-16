@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
+import type * as THREE from 'three';
 import { Edges } from '@react-three/drei';
 import { layout, type WallConfig } from '../config/layout';
 import { useStore } from '../state/store';
@@ -52,6 +54,92 @@ function wallBox(wall: WallConfig, a: number, b: number, y0: number, h: number, 
   return vertical
     ? { position: [wall.x0, y0 + h / 2, mid] as [number, number, number], size: [t, h, b - a] as [number, number, number] }
     : { position: [mid, y0 + h / 2, wall.z0] as [number, number, number], size: [b - a, h, t] as [number, number, number] };
+}
+
+type At = (along: number, y: number, off?: number) => [number, number, number];
+
+/**
+ * Hoja del portón seccional (blanca, con la ventanita) que sube y baja, con la cadena de
+ * accionamiento manual a la derecha y la botonera a 1,6 m de altura. Tocando la botonera se abre o se cierra.
+ */
+function SectionalDoor({
+  at,
+  faceRot,
+  mid,
+  width,
+  rightAlong,
+  edgeRight,
+}: {
+  at: At;
+  faceRot: [number, number, number];
+  mid: number;
+  width: number;
+  rightAlong: number;
+  edgeRight: number;
+}) {
+  const leaf = useRef<THREE.Mesh>(null);
+  const open = useRef(1); // 1 = abierto (hoja arriba), 0 = cerrado
+  const [target, setTarget] = useState(1);
+  const [hover, setHover] = useState(false);
+  const leafH = DOOR_H;
+  useFrame((_, dt) => {
+    const k = open.current;
+    if (k === target) return;
+    // ~6 s en abrir o cerrar del todo, como un portón real.
+    const step = Math.min(dt, 0.5) / 6;
+    open.current = target > k ? Math.min(target, k + step) : Math.max(target, k - step);
+    if (leaf.current) leaf.current.position.y = leafH / 2 + open.current * DOOR_H;
+  });
+  const chainX = edgeRight + rightAlong * 0.22;
+  const boxAlong = edgeRight + rightAlong * 0.55;
+  return (
+    <group>
+      <mesh ref={leaf} position={at(mid, leafH / 2 + DOOR_H, 0.2)} rotation={faceRot} receiveShadow raycast={noRaycast}>
+        <planeGeometry args={[width + 0.2, leafH]} />
+        <meshStandardMaterial color={SCENE.doorPanel} map={sectionalDoorTexture()} roughness={0.45} metalness={0.1} side={2} />
+      </mesh>
+      {/* Cadena (dos tramos) y rueda arriba. */}
+      {[-0.025, 0.025].map((o) => (
+        <mesh key={o} position={at(chainX + o, DOOR_H / 2 + 0.3, 0.3)} raycast={noRaycast}>
+          <cylinderGeometry args={[0.008, 0.008, DOOR_H - 0.6, 6]} />
+          <meshStandardMaterial color="#5b6168" metalness={0.8} roughness={0.35} />
+        </mesh>
+      ))}
+      <mesh position={at(chainX, DOOR_H - 0.05, 0.3)} rotation={[faceRot[0], faceRot[1], Math.PI / 2]} raycast={noRaycast}>
+        <cylinderGeometry args={[0.09, 0.09, 0.04, 20]} />
+        <meshStandardMaterial color="#3f444a" metalness={0.7} roughness={0.4} />
+      </mesh>
+      {/* Botonera: subir (verde), parar (roja), bajar (negra). */}
+      <group
+        position={at(boxAlong, 1.6, 0.06)}
+        rotation={faceRot}
+        onClick={(e) => {
+          e.stopPropagation();
+          setTarget((t) => (t > 0.5 ? 0 : 1));
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setHover(true);
+        }}
+        onPointerOut={() => setHover(false)}
+      >
+        <mesh position={[0, 0, 0.05]}>
+          <boxGeometry args={[0.16, 0.28, 0.09]} />
+          <meshStandardMaterial color={hover ? '#fde68a' : '#d4d8dc'} roughness={0.5} />
+        </mesh>
+        {[
+          ['#16a34a', 0.08],
+          ['#dc2626', 0],
+          ['#111827', -0.08],
+        ].map(([c, y]) => (
+          <mesh key={c as string} position={[0, y as number, 0.1]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.025, 0.025, 0.02, 16]} />
+            <meshStandardMaterial color={c as string} roughness={0.4} emissive={c as string} emissiveIntensity={0.15} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
 }
 
 /** Piso de hormigón llaneado (repite cada 4 m) con una capa de desgaste por los pasillos. */
@@ -165,6 +253,8 @@ export function Building() {
           vertical ? [wall.x0 + inward * off, y, along] : [along, y, wall.z0 + inward * off];
         const faceRot: [number, number, number] = vertical ? [0, inward > 0 ? Math.PI / 2 : -Math.PI / 2, 0] : [0, inward > 0 ? 0 : Math.PI, 0];
         const panelTop = Math.min(DOOR_H + 4.3, layout.wallHeight - 0.2);
+        // Lado derecho visto desde adentro (ahí van la cadena y la botonera).
+        const rightAlong = vertical ? (inward > 0 ? -1 : 1) : inward > 0 ? 1 : -1;
         return (
           <group key={dr.name}>
             {/* Dintel y pared sobre el portón (solo en paredes altas) */}
@@ -174,11 +264,14 @@ export function Building() {
                 <meshStandardMaterial color={SCENE.wallSheet} map={sheetFor(width)} roughness={0.55} metalness={0.1} />
               </mesh>
             )}
-            {/* Hoja levantada, del lado de adentro */}
-            <mesh position={at(mid, (DOOR_H + panelTop) / 2, 0.2)} rotation={faceRot} raycast={noRaycast}>
-              <planeGeometry args={[width + 0.2, panelTop - DOOR_H]} />
-              <meshStandardMaterial color={SCENE.doorPanel} map={sectionalDoorTexture()} roughness={0.45} metalness={0.1} side={2} />
-            </mesh>
+            <SectionalDoor
+              at={at}
+              faceRot={faceRot}
+              mid={mid}
+              width={width}
+              rightAlong={rightAlong}
+              edgeRight={rightAlong > 0 ? dr.to : dr.from}
+            />
             {/* Marco claro y guías */}
             {[dr.from - 0.08, dr.to + 0.08].map((p) => (
               <mesh key={p} position={at(p, panelTop / 2, 0.12)} raycast={noRaycast}>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { layout } from '../config/layout';
+import { QUALITY, type Quality } from '../config/visual';
 import { buildDemoInventory } from '../data/demoInventory';
 import { storage } from '../data/storage';
 import { indexInventory, todayIso, type InventoryIndex } from '../domain/inventory';
@@ -52,6 +53,16 @@ interface AppState {
   camera: { id: number; path: CameraKeyframe[] } | null;
 
   forklift: ForkliftState;
+  /** Calidad gráfica (se recuerda en esta PC). */
+  quality: Quality;
+  setQuality: (q: Quality) => void;
+  /** La calidad la eligió la persona (entonces no se baja sola). */
+  qualityManual: boolean;
+  /** Baja un nivel de calidad si la PC no llega a una animación fluida. */
+  autoLowerQuality: () => void;
+  /** Aviso breve en pantalla. */
+  notice: string | null;
+  setNotice: (n: string | null) => void;
   /** Manda la apiladora a bajar un pallet de la ubicación. */
   fetchPallet: (code: string) => void;
   /** Devuelve el pallet a su lugar y la apiladora a su posición. */
@@ -78,6 +89,8 @@ interface AppState {
 const warehouse = buildWarehouse(layout);
 const initialInventory = storage.loadInventory() ?? buildDemoInventory(warehouse);
 const initialCounts = storage.loadCounts();
+const savedQuality = storage.loadQuality();
+const initialQuality: Quality = savedQuality && savedQuality in QUALITY ? (savedQuality as Quality) : 'alto';
 
 export const useStore = create<AppState>((set, get) => ({
   warehouse,
@@ -93,6 +106,22 @@ export const useStore = create<AppState>((set, get) => ({
   walkMode: false,
   camera: null,
   forklift: { request: null, status: null, lifted: null, onFloor: null },
+  quality: initialQuality,
+  setQuality: (quality) => {
+    storage.saveQuality(quality);
+    set({ quality, qualityManual: true });
+  },
+  qualityManual: savedQuality != null,
+  autoLowerQuality: () => {
+    const { quality, qualityManual } = get();
+    if (qualityManual) return;
+    const order: Quality[] = ['ultra', 'alto', 'medio', 'bajo'];
+    const next = order[order.indexOf(quality) + 1];
+    if (!next) return;
+    set({ quality: next, notice: `Gráficos en "${QUALITY[next].label}" para que el recorrido vaya fluido (se puede cambiar arriba).` });
+  },
+  notice: null,
+  setNotice: (notice) => set({ notice }),
 
   fetchPallet: (code) => {
     const f = get().forklift;

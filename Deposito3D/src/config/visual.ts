@@ -6,9 +6,32 @@ export const VISUAL = {
   filmShare: { carton: 0.6, plastico: 0.45, klt: 0.3, film: 1, cajon: 0 } as Record<string, number>,
   /** De los pallets con film, qué parte lleva film abundante (más vueltas, pliegues, acumulaciones). */
   heavyFilmShare: 0.35,
-  /**
-   * Etapa 1 de la mejora gráfica: solo esta ubicación se dibuja con el pallet detallado
-   * (posición 1 con film normal y posición 2 con film abundante) para revisar el resultado.
-   */
-  showcase: 'E4.1',
+};
+
+/** Calidad gráfica, como en la configuración de un juego. */
+export type Quality = 'bajo' | 'medio' | 'alto' | 'ultra';
+
+export interface QualitySettings {
+  label: string;
+  /** Pallets con tablas, cajas individuales y film (si no, bloques simples). */
+  detailedLoads: boolean;
+  shadows: boolean;
+  shadowMap: number;
+  /** Resolución máxima (densidad de píxeles). */
+  dpr: [number, number];
+  /** Oclusión ambiental (sombras de contacto entre cajas, pallets y estanterías). */
+  ao: boolean;
+  /** Brillo suave en luces y reflejos fuertes. */
+  bloom: boolean;
+  /** Suavizado de bordes. */
+  smaa: boolean;
+  /** Viñeta suave en los bordes de la imagen. */
+  vignette: boolean;
+}
+
+export const QUALITY: Record<Quality, QualitySettings> = {
+  bajo: { label: 'Bajo', detailedLoads: false, shadows: false, shadowMap: 1024, dpr: [1, 1], ao: false, bloom: false, smaa: false, vignette: false },
+  medio: { label: 'Medio', detailedLoads: true, shadows: true, shadowMap: 2048, dpr: [1, 1.5], ao: false, bloom: false, smaa: true, vignette: false },
+  alto: { label: 'Alto', detailedLoads: true, shadows: true, shadowMap: 2048, dpr: [1, 2], ao: true, bloom: false, smaa: true, vignette: true },
+  ultra: { label: 'Ultra', detailedLoads: true, shadows: true, shadowMap: 4096, dpr: [1, 2], ao: true, bloom: true, smaa: true, vignette: true },
 };
