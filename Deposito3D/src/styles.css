@@ -293,3 +293,61 @@ select, input { font: inherit; }
   .brand-tag, .select span { display: none; }
   .search input { width: 160px; }
 }
+
+/* ---------- Inicio ---------- */
+.home {
+  position: fixed; inset: 0; z-index: 40; overflow: auto;
+  background: radial-gradient(ellipse at 30% 20%, rgba(14,116,144,.35), transparent 60%), rgba(8,13,26,.9);
+  backdrop-filter: blur(3px); color: #e2e8f0; display: flex;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+}
+.home-inner { margin: auto; max-width: 980px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.home-kicker { text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: #67e8f9; font-weight: 700; }
+.home h1 { margin: 0; font-size: clamp(34px, 6vw, 58px); letter-spacing: -.02em; }
+.home-sub { margin: 0; max-width: 60ch; color: #cbd5e1; font-size: 16px; line-height: 1.5; }
+.home-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 10px; }
+.home-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; padding: 18px;
+  border-radius: 14px; border: 1px solid #334155; background: rgba(30,41,59,.75); color: #e2e8f0; cursor: pointer;
+  transition: transform .15s, border-color .15s, background .15s;
+}
+.home-card:hover { transform: translateY(-2px); border-color: #22d3ee; background: rgba(30,41,59,.95); }
+.home-icon { font-size: 28px; }
+.home-title { font-size: 19px; font-weight: 700; }
+.home-text { font-size: 13.5px; color: #94a3b8; line-height: 1.45; }
+.home-foot { font-size: 12.5px; color: #64748b; margin-top: 6px; }
+
+/* ---------- Demo ---------- */
+.demo-bar {
+  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 6; width: min(760px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 12px; background: rgba(8,13,26,.9); color: #e2e8f0; border: 1px solid #0891b2;
+  border-radius: 12px; padding: 10px 12px 10px 14px; box-shadow: 0 6px 24px rgba(0,0,0,.35);
+}
+.demo-step { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #67e8f9; white-space: nowrap; }
+.demo-text { flex: 1; min-width: 0; font-size: 14px; line-height: 1.4; }
+.demo-bar button { border: 0; border-radius: 8px; padding: 6px 12px; background: #f1f5f9; color: #0f172a; font-weight: 600; }
+
+/* ---------- Terminal QAD (simulación) ---------- */
+.qad-overlay { position: fixed; inset: 0; z-index: 30; background: rgba(2,6,12,.72); display: flex; padding: 16px; }
+.qad-window { margin: auto; width: min(1000px, 100%); display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+.qad-chrome { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #e5e7eb; color: #111; font-size: 12.5px; padding: 5px 8px 5px 12px; }
+.qad-chrome button { border: 0; background: transparent; font-size: 15px; padding: 2px 6px; }
+.qad-screen {
+  background: #000; color: #4ade4a; font-family: "Lucida Console", "Courier New", ui-monospace, monospace;
+  font-size: clamp(9px, 1.45vw, 15px); line-height: 1.32; padding: 10px 12px; outline: none; overflow-x: auto; min-height: 60vh;
+  text-shadow: 0 0 4px rgba(74,222,74,.45);
+}
+.qad-screen:focus { box-shadow: inset 0 0 0 2px #14532d; }
+.qad-line { white-space: pre; min-width: 80ch; }
+.qad-title { color: #86efac; text-decoration: underline; text-decoration-color: #22c55e; }
+.qad-hl { color: #000; background: #4ade4a; text-shadow: none; display: inline-block; }
+.qad-sel { color: #000; background: #4ade4a; text-shadow: none; }
+.qad-bar { color: #000; background: #22c55e; text-shadow: none; }
+.qad-box { border-top: 1px solid #22c55e; border-bottom: 1px solid #22c55e; }
+.qad-input { color: #bbf7d0; }
+.qad-dim { color: #86efac; }
+.qad-msg { color: #fde047; }
+.qad-fkeys { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 12px; }
+.qad-fkeys button { background: transparent; border: 0; color: #4ade4a; font: inherit; padding: 0; cursor: pointer; font-style: italic; }
+.qad-fkeys button:hover { color: #bbf7d0; text-decoration: underline; }
+.qad-hint { background: #0b1220; color: #94a3b8; font-size: 12.5px; padding: 8px 12px; line-height: 1.45; }

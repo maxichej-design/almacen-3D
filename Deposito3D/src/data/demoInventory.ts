@@ -67,6 +67,8 @@ export function buildDemoInventory(wh: Warehouse): Inventory {
   const weighted = parts.flatMap((p) => (p.abc === 'A' ? [p, p, p] : p.abc === 'B' ? [p, p] : [p]));
 
   const records: StockRecord[] = [];
+  // Referencias de tarima correlativas (no usan el aleatorio, así el resto de los datos no cambia).
+  let tarima = 0;
   const makeRecord = (location: string, p: (typeof parts)[number], opts: { fresh?: boolean } = {}): StockRecord => {
     const ageMax = p.abc === 'D' ? 900 : 330;
     const ageMin = p.abc === 'D' ? 300 : 1;
@@ -84,6 +86,8 @@ export function buildDemoInventory(wh: Warehouse): Inventory {
       qty: p.uom === 'KG' ? 25 * (1 + Math.floor(rnd() * 40)) : 10 * (1 + Math.floor(rnd() * 60)),
       receivedAt,
       lot: `L${receivedAt.replace(/-/g, '').slice(2)}-${Math.floor(rnd() * 90 + 10)}`,
+      ref: `T${2594000 + 7 * tarima++}`,
+      status: 'GENERAL',
       lastCountAt: opts.fresh ? undefined : addDays(today, -sinceCount),
     };
   };

@@ -12,6 +12,9 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
   const showLabels = useStore((s) => s.showLabels);
   const setShowLabels = useStore((s) => s.setShowLabels);
   const source = useStore((s) => s.inventory.source);
+  const setScreen = useStore((s) => s.setScreen);
+  const openQad = useStore((s) => s.openQad);
+  const setDemo = useStore((s) => s.setDemo);
   const quality = useStore((s) => s.quality);
   const setQuality = useStore((s) => s.setQuality);
 
@@ -50,6 +53,11 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
         </select>
       </label>
       <div className="toolbar-end">
+        <div className="seg" role="group" aria-label="Menús">
+          <button onClick={() => setScreen('inicio')} title="Volver al menú de inicio">☰ Inicio</button>
+          <button onClick={() => openQad()} title="Terminal de QAD (simulación)">QAD</button>
+          <button onClick={() => setDemo(true)} title="Demostración automática">▶ Demo</button>
+        </div>
         <label className="check">
           <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} /> Carteles
         </label>

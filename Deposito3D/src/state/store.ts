@@ -5,7 +5,7 @@ import { buildDemoInventory } from '../data/demoInventory';
 import { storage } from '../data/storage';
 import { indexInventory, todayIso, type InventoryIndex } from '../domain/inventory';
 import type { ColorMode, Inventory, Selection, Warehouse } from '../domain/types';
-import { buildWarehouse } from '../domain/warehouse';
+import { buildWarehouse, normalizeLocation } from '../domain/warehouse';
 import {
   generalView,
   planView,
@@ -69,6 +69,19 @@ interface AppState {
   parkForklift: () => void;
   setForklift: (patch: Partial<ForkliftState>) => void;
 
+  /** Pantalla de inicio (menú) o la aplicación. */
+  screen: 'inicio' | 'app';
+  setScreen: (s: 'inicio' | 'app') => void;
+  /** Terminal de simulación de QAD abierta (con una consulta inicial opcional). */
+  qad: { open: boolean; program?: string; partNumber?: string; run?: boolean };
+  openQad: (opts?: { program?: string; partNumber?: string; run?: boolean }) => void;
+  closeQad: () => void;
+  /** Demostración guiada en curso. */
+  demo: boolean;
+  setDemo: (v: boolean) => void;
+  /** Transferencia de inventario (simulación tipo QAD 3.4.1). Devuelve un error o null. */
+  transferStock: (t: { partNumber: string; from: string; ref?: string; to: string; qty: number }) => string | null;
+
   select: (sel: Selection, opts?: { fly?: boolean }) => void;
   setHover: (h: Hover) => void;
   clearHover: (h: Hover) => void;
@@ -106,6 +119,30 @@ export const useStore = create<AppState>((set, get) => ({
   walkMode: false,
   camera: null,
   forklift: { request: null, status: null, lifted: null, onFloor: null },
+  screen: 'inicio',
+  setScreen: (screen) => set({ screen }),
+  qad: { open: false },
+  openQad: (opts) => set({ qad: { open: true, ...opts }, walkMode: false }),
+  closeQad: () => set({ qad: { open: false } }),
+  demo: false,
+  setDemo: (demo) => set({ demo }),
+  transferStock: ({ partNumber, from, ref, to, qty }) => {
+    if (!(qty > 0)) return 'Cantidad inválida';
+    const target = normalizeLocation(to);
+    if (!warehouse.locationIndex.has(target) && !warehouse.zoneIndex.has(target)) return `Ubicación ${to} no existe`;
+    const records = get().inventory.records.slice();
+    const i = records.findIndex((r) => r.partNumber === partNumber && r.location === from && (!ref || r.ref === ref));
+    if (i < 0) return 'No hay existencia en la ubicación de origen';
+    const src = records[i];
+    if (qty > src.qty) return `Existencia insuficiente (${src.qty})`;
+    if (qty === src.qty) records.splice(i, 1);
+    else records[i] = { ...src, qty: src.qty - qty };
+    records.push({ ...src, location: target, qty });
+    const inventory = { ...get().inventory, records };
+    storage.saveInventory(inventory);
+    set({ inventory, index: indexInventory(inventory, warehouse, get().counts) });
+    return null;
+  },
   quality: initialQuality,
   setQuality: (quality) => {
     storage.saveQuality(quality);

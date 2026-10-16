@@ -262,10 +262,16 @@ function PartDetail({ pn }: { pn: string }) {
   const select = useStore((s) => s.select);
   const walkTo = useStore((s) => s.walkTo);
   const wh = useStore((s) => s.warehouse);
+  const openQad = useStore((s) => s.openQad);
   if (!part) return <Empty />;
   return (
     <div className="pad">
       <Head kicker="Número de parte" title={pn} onClose={() => select(null)} />
+      <div className="actions">
+        <button onClick={() => openQad({ program: '3.2', partNumber: pn, run: true })} title="Consulta 3.2 de QAD (simulación)">
+          🖥️ Ver como en QAD (3.2)
+        </button>
+      </div>
       {part.description && <p className="lead">{part.description}</p>}
       <div className="badges">
         {part.abc && (

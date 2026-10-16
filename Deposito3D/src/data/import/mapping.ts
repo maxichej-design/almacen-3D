@@ -12,6 +12,8 @@ export const FIELDS = {
   abc: { label: 'Clase ABC', required: false, names: ['tipoabc', 'abc', 'clase', 'categoria', 'clasificacion', 'class'] },
   receivedAt: { label: 'Fecha de ingreso', required: false, names: ['fechaingreso', 'fechadeingreso', 'ingreso', 'fecharecepcion', 'recepcion', 'received', 'receiptdate', 'fechalote', 'fecha', 'date'] },
   lot: { label: 'Lote', required: false, names: ['lote', 'lot', 'batch', 'serie', 'loteserie'] },
+  ref: { label: 'Referencia / tarima', required: false, names: ['referencia', 'tarima', 'ref', 'etiqueta', 'pallet', 'lpn', 'tag'] },
+  status: { label: 'Estado', required: false, names: ['estado', 'status', 'estadoinventario'] },
   lastCountAt: { label: 'Último conteo', required: false, names: ['ultimoconteo', 'fechaconteo', 'fechaultimoconteo', 'lastcount', 'countdate', 'conteo'] },
   usedIn: { label: 'Dónde se usa', required: false, names: ['usadoen', 'dondeseusa', 'modelo', 'proyecto', 'padre', 'parent', 'ensamble', 'bom'] },
 } as const;
@@ -130,6 +132,8 @@ export function rowsToRecords(
       abc: parseAbc(get(row, 'abc')),
       receivedAt: parseDate(get(row, 'receivedAt')),
       lot: text('lot'),
+      ref: text('ref'),
+      status: text('status'),
       lastCountAt: parseDate(get(row, 'lastCountAt')),
       usedIn: text('usedIn'),
     });

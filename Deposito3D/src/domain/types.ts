@@ -93,6 +93,10 @@ export interface StockRecord {
   /** Fecha de ingreso (ISO yyyy-mm-dd), base del FIFO. */
   receivedAt?: string;
   lot?: string;
+  /** Referencia de la tarima (etiqueta del pallet, la que se escanea), p. ej. "T2599888". */
+  ref?: string;
+  /** Estado del inventario en QAD (GENERAL, CALIDAD, ...). */
+  status?: string;
   /** Fecha del último conteo cíclico (ISO). */
   lastCountAt?: string;
   /** Dónde se usa (módulo / producto / proyecto), si el reporte lo trae. */

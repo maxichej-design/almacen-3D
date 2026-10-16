@@ -41,6 +41,12 @@ export function RecordList({ records }: { records: StockRecord[] }) {
                   <dd>{r.lot}</dd>
                 </>
               )}
+              {r.ref && (
+                <>
+                  <dt>Tarima</dt>
+                  <dd>{r.ref}</dd>
+                </>
+              )}
               <dt>FIFO</dt>
               <dd>
                 {!fifo ? (

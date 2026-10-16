@@ -57,6 +57,22 @@ export function Search() {
         out.push({ key: `z-${z.code}`, title: z.code, subtitle: z.name, selection: { kind: 'zone', code: z.code } });
       }
     }
+    // Referencia de tarima (la etiqueta que se escanea): lleva directo a su ubicación.
+    const uq = query.toUpperCase();
+    if (uq.length >= 4) {
+      for (const sum of index.byLocation.values()) {
+        const r = sum.records.find((x) => x.ref?.toUpperCase() === uq);
+        if (r) {
+          out.push({
+            key: `t-${r.ref}`,
+            title: `Tarima ${r.ref}`,
+            subtitle: `${r.partNumber} · ${r.location}`,
+            selection: wh.locationIndex.has(r.location) ? { kind: 'location', code: r.location } : { kind: 'zone', code: r.location },
+          });
+          break;
+        }
+      }
+    }
     const lq = query.toLowerCase();
     for (const p of index.byPart.values()) {
       if (out.length > 12) break;

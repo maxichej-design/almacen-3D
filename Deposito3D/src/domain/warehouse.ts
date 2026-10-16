@@ -12,7 +12,10 @@ export function locationCode(rowId: string, module: number, level: number) {
 export function normalizeLocation(raw: unknown): string {
   const s = String(raw ?? '').trim().toUpperCase().replace(/\s+/g, '');
   const m = /^([A-Z])[-_]?0*(\d+)[.\-_,]0*(\d+)$/.exec(s);
-  return m ? `${m[1]}${m[2]}.${m[3]}` : s;
+  if (m) return `${m[1]}${m[2]}.${m[3]}`;
+  // QAD muestra la ubicación de WIP como "w0.wip".
+  if (s === 'W0.WIP' || s === 'W0-WIP') return 'W0WIP';
+  return s;
 }
 
 /** Construye la geometría del depósito a partir del layout (plano de ingeniería). */
