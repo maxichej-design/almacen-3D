@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { Edges } from '@react-three/drei';
 import { layout, type WallConfig } from '../config/layout';
 import { useStore } from '../state/store';
 import { Label } from './Label';
 import { SCENE } from './palette';
+import { concreteMaps, wearTexture } from './pbr';
 import { blockTexture, corrugatedTexture, sectionalDoorTexture } from './textures';
 
 const noRaycast = () => null;
@@ -52,6 +54,55 @@ function wallBox(wall: WallConfig, a: number, b: number, y0: number, h: number, 
     : { position: [mid, y0 + h / 2, wall.z0] as [number, number, number], size: [b - a, h, t] as [number, number, number] };
 }
 
+/** Piso de hormigón llaneado (repite cada 4 m) con una capa de desgaste por los pasillos. */
+function ConcreteFloor() {
+  const wh = useStore((s) => s.warehouse);
+  const inn = layout.interior;
+  const W = inn.x1 - inn.x0;
+  const D = inn.z1 - inn.z0;
+  const maps = useMemo(() => {
+    const { color, rough } = concreteMaps();
+    const c = color.clone();
+    const r = rough.clone();
+    for (const t of [c, r]) {
+      t.repeat.set(W / 4, D / 4);
+      t.needsUpdate = true;
+    }
+    return { color: c, rough: r };
+  }, [W, D]);
+  const wear = useMemo(() => {
+    const nx = (x: number) => (x - inn.x0) / W;
+    const nz = (z: number) => (z - inn.z0) / D;
+    const tracks = wh.aisles.map((a) =>
+      a.cross
+        ? { x0: nx((a.x0 + a.x1) / 2), y0: nz(a.z0), x1: nx((a.x0 + a.x1) / 2), y1: nz(a.z1), w: 0.05 }
+        : { x0: nx(a.x0), y0: nz(a.centerZ), x1: nx(a.x1), y1: nz(a.centerZ), w: 0.08 },
+    );
+    return wearTexture(`${W}x${D}`, tracks);
+  }, [wh, inn, W, D]);
+  const cx = (inn.x0 + inn.x1) / 2;
+  const cz = (inn.z0 + inn.z1) / 2;
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0, cz]} receiveShadow raycast={noRaycast}>
+        <planeGeometry args={[W, D]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          map={maps.color}
+          roughnessMap={maps.rough}
+          roughness={0.62}
+          metalness={0}
+          envMapIntensity={0.9}
+        />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.002, cz]} receiveShadow raycast={noRaycast}>
+        <planeGeometry args={[W, D]} />
+        <meshStandardMaterial map={wear} transparent depthWrite={false} roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
 /** Piso, paredes con portones, demarcación al pie de las filas, huecos vacíos y nombres de pasillos. */
 export function Building() {
   const wh = useStore((s) => s.warehouse);
@@ -66,10 +117,7 @@ export function Building() {
         <planeGeometry args={[maxX - minX, maxZ - minZ]} />
         <meshStandardMaterial color="#b8bcc2" roughness={0.9} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(inn.x0 + inn.x1) / 2, 0, (inn.z0 + inn.z1) / 2]} receiveShadow raycast={noRaycast}>
-        <planeGeometry args={[inn.x1 - inn.x0, inn.z1 - inn.z0]} />
-        <meshStandardMaterial color={SCENE.floor} roughness={0.35} metalness={0.05} />
-      </mesh>
+      <ConcreteFloor />
 
       {/* Paredes: zócalo de bloques gris azulado + chapa acanalada blanca (la del frente va baja para poder
           mirar); la de atrás de D/C/B es toda de bloques pintados de blanco. */}
