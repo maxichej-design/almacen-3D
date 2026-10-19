@@ -55,7 +55,7 @@ export interface ZoneConfig {
   /** Código tal como aparece en el sistema, p. ej. "W0WIP". */
   code: string;
   name: string;
-  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio' | 'bin';
+  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio' | 'bin' | 'calidad';
   /** La ubicación está en la estantería (cartel colgante); en el piso solo se marca. */
   inRack?: boolean;
   x: number;
@@ -152,8 +152,9 @@ export const layout: WarehouseLayout = {
     { id: 'G', aisle: '1', x: 28.0 - 10 * BAY - BAY, z: 0.18, modules: 12, facing: 1, module1: 'fin', halfModule1: true, halfModuleLast: true },
     { id: 'F', aisle: '1', x: HALL_X - 12 * BAY, z: 5.24, modules: 12, facing: -1, module1: 'fin' },
     { id: 'E', aisle: '2', x: HALL_X - 12 * BAY, z: 6.4, modules: 12, facing: 1, module1: 'fin' },
-    // Fila larga de abajo (cruza los dos bloques) y llega hasta la pared derecha.
-    { id: 'A', aisle: '2', x: WALL_RIGHT - 0.09 - 18 * BAY, z: 11.2, modules: 18, facing: -1 },
+    // Fila larga de abajo (cruza los dos bloques). Numeración invertida: empieza contra la pared derecha
+    // con MEDIO módulo (A1) y termina con módulo entero en A19 (19 módulos). A18 y A19 = A2.QC.
+    { id: 'A', aisle: '2', x: WALL_RIGHT - 0.09 - 18 * BAY - BAY / 2, z: 11.2, modules: 19, facing: -1, module1: 'fin', halfModule1: true },
     // Bloque derecho: 5 módulos, el 1 del lado de la pared y el 5 hacia el hall de entrada.
     { id: 'D', aisle: '1', x: 32.67, z: 0.71, modules: 5, facing: 1, module1: 'fin' },
     { id: 'C', aisle: '1', x: 32.67, z: 5.24, modules: 5, facing: -1, module1: 'fin' },
@@ -199,6 +200,8 @@ export const layout: WarehouseLayout = {
     // Escritorio con la computadora, al lado de la entrada.
     { code: 'PC', name: 'Puesto de computadora', kind: 'servicio', x: 28.1, z: 0.0, w: 1.05, d: 0.67 },
     // W0-WIP: cartel "UBICACIÓN W0-WIP" sobre los módulos E1–E2 (video 15/10); se marca en el piso del pasillo.
+    // A2.QC: material no conforme, en los módulos A18–A19 (punta de la fila A del lado de recepción).
+    { code: 'A2.QC', name: 'Material no conforme – A18–A19', kind: 'calidad', x: WALL_RIGHT - 0.09 - 18 * BAY - BAY / 2, z: 10.5, w: 2 * BAY, d: 0.6, inRack: true },
     { code: 'W0WIP', name: 'WIP – estantería E1–E2', kind: 'wip', x: HALL_X - 2 * BAY, z: 7.5, w: 2 * BAY, d: 0.6, inRack: true },
   ],
 };

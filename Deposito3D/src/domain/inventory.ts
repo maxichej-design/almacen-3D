@@ -142,7 +142,7 @@ export function indexInventory(
       parts.set(r.partNumber, p);
     }
     const zoneKind = wh.zoneIndex.get(r.location)?.kind;
-    if (zoneKind === 'wip' || zoneKind === 'expedicion' || (qadLoc && OUTSIDE_FIFO_GROUPS.includes(qadLoc.group))) {
+    if (zoneKind === 'wip' || zoneKind === 'expedicion' || zoneKind === 'calidad' || (qadLoc && OUTSIDE_FIFO_GROUPS.includes(qadLoc.group))) {
       p.outside.push(r);
     } else {
       p.totalQty += r.qty;

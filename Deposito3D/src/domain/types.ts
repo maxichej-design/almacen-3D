@@ -61,7 +61,7 @@ export interface Aisle {
 export interface Zone {
   code: string;
   name: string;
-  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio' | 'bin';
+  kind: 'wip' | 'recepcion' | 'expedicion' | 'piso' | 'moldes' | 'servicio' | 'bin' | 'calidad';
   inRack?: boolean;
   /** Rectángulo en el mundo. */
   x0: number;

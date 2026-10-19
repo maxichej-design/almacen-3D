@@ -10,7 +10,7 @@ Gemelo digital del almacén: el stock visto en 3D, ubicación por ubicación, pa
 ## Qué hace
 
 - **Depósito 3D según el plano y las indicaciones de planta:** filas G y E/F de 12 módulos (G con medio
-  módulo en cada punta), A de 18, bloque derecho D, C, B de 5; módulos Mecalux de 2,4 m con 2 posiciones
+  módulo en cada punta), A de 19 (A1 medio módulo contra la pared derecha; A18–A19 = A2.QC), bloque derecho D, C, B de 5; módulos Mecalux de 2,4 m con 2 posiciones
   de pallet y 6 niveles; 2 pasillos + hall de entrada; recepción por los portones del fondo. Códigos de ubicación tipo `C5.1`
   (fila C, módulo 5, nivel 1 = piso). Zonas: Recepción, **W0WIP** (armado), Expedición, F1, L1, Q1 (posición a confirmar).
 - **Buscador único:** ubicación (`C5.1`), fila (`C`), zona (`W0WIP`) o número de parte / descripción.
