@@ -44,6 +44,7 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
       <div className="seg" role="group" aria-label="Vistas">
         <button onClick={() => setView('general')}>General</button>
         <button onClick={() => setView('planta')}>Planta</button>
+        <button onClick={() => setView('sitio')} title="Toda la planta: depósito, oficina, sala de materiales, inyección">Planta completa</button>
         <button className={walkMode ? 'on' : undefined} onClick={() => setWalkMode(!walkMode)} title="Caminar por el depósito en primera persona">
           🚶 Recorrer
         </button>

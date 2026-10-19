@@ -94,7 +94,7 @@ export function CameraRig() {
       enableDamping
       dampingFactor={0.1}
       minDistance={0.5}
-      maxDistance={span * 2.2}
+      maxDistance={Math.max(span * 2.2, 320)}
       maxPolarAngle={Math.PI / 2 - 0.02}
       screenSpacePanning
       target={[(bounds.minX + bounds.maxX) / 2, 1.5, (bounds.minZ + bounds.maxZ) / 2]}

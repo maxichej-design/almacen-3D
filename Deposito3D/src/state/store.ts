@@ -9,6 +9,7 @@ import { buildWarehouse, normalizeLocation } from '../domain/warehouse';
 import {
   generalView,
   planView,
+  siteView,
   viewForSelection,
   walkToLocation,
   type CameraKeyframe,
@@ -92,7 +93,7 @@ interface AppState {
   flyTo: (path: CameraKeyframe[]) => void;
   focusSelection: () => void;
   walkTo: (code: string) => void;
-  setView: (v: 'general' | 'planta') => void;
+  setView: (v: 'general' | 'planta' | 'sitio') => void;
   /** Carga un inventario. Devuelve false si no se pudo guardar en la PC (demasiado grande). */
   loadInventory: (inv: Inventory) => boolean;
   resetToDemo: () => void;
@@ -191,7 +192,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   focusSelection: () => get().flyTo(viewForSelection(warehouse, get().index, get().selection)),
   walkTo: (code) => get().flyTo(walkToLocation(warehouse, code)),
-  setView: (v) => get().flyTo(v === 'general' ? generalView(warehouse) : planView(warehouse)),
+  setView: (v) => get().flyTo(v === 'general' ? generalView(warehouse) : v === 'sitio' ? siteView() : planView(warehouse)),
 
   loadInventory: (inventory) => {
     const saved = storage.saveInventory(inventory);

@@ -523,3 +523,18 @@ export const connectorMap = () =>
       }
     }),
   );
+
+/** Jaula de malla metálica: barras verticales y horizontales (lo demás transparente). */
+export const cageTexture = () =>
+  once('jaula', () => {
+    const t = canvasTex(128, 128, (c) => {
+      c.clearRect(0, 0, 128, 128);
+      c.fillStyle = '#d4d8dc';
+      for (let x = 0; x < 128; x += 16) c.fillRect(x, 0, 3, 128);
+      for (let y = 0; y < 128; y += 32) c.fillRect(0, y, 128, 3);
+      c.fillRect(0, 0, 128, 5);
+      c.fillRect(0, 123, 128, 5);
+    });
+    t.repeat.set(3, 2);
+    return t;
+  });

@@ -1,4 +1,5 @@
 import { layout } from '../config/layout';
+import { SITE_BOUNDS } from '../config/site';
 import type { InventoryIndex } from '../domain/inventory';
 import type { Selection, Warehouse } from '../domain/types';
 
@@ -21,6 +22,15 @@ export function generalView(wh: Warehouse): CameraKeyframe[] {
   const span = inn.x1 - inn.x0;
   void wh;
   return [{ target: [cx, 1, cz + 1], position: [cx + span * 0.12, span * 0.62, inn.z0 - span * 0.55] }];
+}
+
+/** Toda la planta (depósito, oficina, sala de materiales, inyección...), en diagonal desde arriba. */
+export function siteView(): CameraKeyframe[] {
+  const b = SITE_BOUNDS;
+  const cx = (b.minX + b.maxX) / 2;
+  const cz = (b.minZ + b.maxZ) / 2;
+  const span = b.maxX - b.minX;
+  return [{ target: [cx, 0, cz], position: [cx, span * 0.85, b.maxZ + span * 0.28], duration: 2.2 }];
 }
 
 export function planView(wh: Warehouse): CameraKeyframe[] {

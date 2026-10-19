@@ -11,6 +11,7 @@ import { Loads } from './Loads';
 import { LocationPicker } from './LocationPicker';
 import { Racks } from './Racks';
 import { Zones } from './Zones';
+import { Site } from './Site';
 import { Effects } from './Effects';
 import { QUALITY } from '../config/visual';
 
@@ -30,16 +31,17 @@ export function WarehouseScene() {
     <Canvas
       shadows={q.shadows ? 'soft' : false}
       dpr={q.dpr}
-      camera={{ position: start.position, fov: 45, near: 0.1, far: 600 }}
+      camera={{ position: start.position, fov: 45, near: 0.1, far: 1200 }}
       onPointerMissed={() => select(null)}
       style={{ cursor: pointer ? 'pointer' : 'grab' }}
     >
       <color attach="background" args={['#e2e8f0']} />
-      <fog attach="fog" args={['#e2e8f0', span * 1.5, span * 3.5]} />
+      <fog attach="fog" args={['#e2e8f0', span * 3, span * 7]} />
       {/* Si la PC no llega a ~25 cuadros por segundo, baja la calidad un nivel (salvo que se haya elegido a mano). */}
       <PerformanceMonitor bounds={() => [25, 55]} flipflops={3} onDecline={autoLower} />
       <Lighting span={span} cx={cx} cz={cz} shadowMap={q.shadowMap} />
 
+      <Site />
       <Building />
       <Racks />
       <Loads />
