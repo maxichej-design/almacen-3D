@@ -1,5 +1,7 @@
 import { COLOR_MODES } from '../scene/palette';
+import { useMemo } from 'react';
 import { useStore } from '../state/store';
+import { occupancy } from '../domain/occupancy';
 import { QUALITY, type Quality } from '../config/visual';
 import { Search } from './Search';
 
@@ -16,6 +18,10 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
   const openQad = useStore((s) => s.openQad);
   const setDemo = useStore((s) => s.setDemo);
   const quality = useStore((s) => s.quality);
+  const wh = useStore((s) => s.warehouse);
+  const index = useStore((s) => s.index);
+  const setTab = useStore((s) => s.setTab);
+  const occ = useMemo(() => occupancy(wh, index).all, [wh, index]);
   const setQuality = useStore((s) => s.setQuality);
 
   return (
@@ -25,6 +31,16 @@ export function Toolbar({ onAbout }: { onAbout: () => void }) {
         <span className={`brand-tag ${source === 'demo' ? 'demo' : 'real'}`}>{source === 'demo' ? 'demo' : 'datos reales'}</span>
       </div>
       <Search />
+      <button
+        className="occ-chip"
+        onClick={() => {
+          setTab('panel');
+          setMode('ocupacion');
+        }}
+        title="Ubicaciones disponibles / total. Clic para ver el tablero"
+      >
+        <span className="occ-dot" /> <b>{occ.free}</b> libres <span className="muted-on-dark">/ {occ.total}</span>
+      </button>
       <div className="seg" role="group" aria-label="Vistas">
         <button onClick={() => setView('general')}>General</button>
         <button onClick={() => setView('planta')}>Planta</button>

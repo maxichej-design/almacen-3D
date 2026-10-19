@@ -351,3 +351,39 @@ select, input { font: inherit; }
 .qad-fkeys button { background: transparent; border: 0; color: #4ade4a; font: inherit; padding: 0; cursor: pointer; font-style: italic; }
 .qad-fkeys button:hover { color: #bbf7d0; text-decoration: underline; }
 .qad-hint { background: #0b1220; color: #94a3b8; font-size: 12.5px; padding: 8px 12px; line-height: 1.45; }
+
+/* ---------- Tarimas (contenido de una ubicación) ---------- */
+.tarimas { display: flex; flex-direction: column; gap: 10px; }
+.tarima { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.tarima-head {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: #0f172a; color: #f8fafc;
+}
+.tarima-tag { font-size: 14px; }
+.tarima-ref { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+.tarima-meta { margin-left: auto; font-size: 12px; color: #94a3b8; }
+.tarima .records { margin: 0; padding: 6px; }
+
+/* ---------- Ocupación (lo principal del tablero) ---------- */
+.occ-hero { border: 1px solid #bbf7d0; background: linear-gradient(180deg, #f0fdf4, #ffffff); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.occ-main { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.occ-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #15803d; }
+.occ-value { font-size: 44px; font-weight: 800; line-height: 1.05; color: #14532d; font-variant-numeric: tabular-nums; }
+.occ-hint { font-size: 13px; color: var(--text-2); }
+.occ-btn { border: 0; border-radius: 8px; padding: 7px 12px; background: #16a34a; color: #fff; font-weight: 600; }
+.occ-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: #e2e8f0; }
+.occ-bar span.used, .occ-legend i.used { background: #2a78d6; }
+.occ-bar span.free, .occ-legend i.free { background: #22c55e; }
+.occ-bar span.res, .occ-legend i.res { background: #dc2626; }
+.occ-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-2); flex-wrap: wrap; }
+.occ-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.occ-table tr { cursor: pointer; }
+.occ-table .free-n { color: #15803d; font-weight: 700; }
+.occ-table .mini-bar { width: 30%; }
+.occ-table .mini-bar span { display: block; height: 8px; border-radius: 4px; background: #2a78d6; }
+.occ-chip {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  border: 1px solid #166534 !important; background: #052e16 !important; color: #dcfce7 !important;
+}
+.occ-chip b { font-size: 15px; color: #4ade80; }
+.occ-dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.muted-on-dark { color: #86efac; opacity: .75; }

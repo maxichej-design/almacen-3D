@@ -48,10 +48,12 @@ export function palletVisuals(loc: RackLocation, sum: LocationSummary, mode: Col
   const tint = tintFor(sum, mode);
   const x = loc.position[0];
   const half = loc.size[0] < dim.bayWidth * 0.75; // medio módulo: entra un solo pallet
-  const pallets = half ? 1 : sum.records.length > 1 || hash(loc.code) > 0.4 ? 2 : 1;
+  // Un pallet por tarima (máximo 2 por nivel de módulo); sin número de tarima, se estima.
+  const tarimas = [...new Set(sum.records.map((r) => r.ref).filter(Boolean))];
+  const pallets = half ? 1 : tarimas.length ? Math.min(2, tarimas.length) : sum.records.length > 1 || hash(loc.code) > 0.4 ? 2 : 1;
   const out: PalletVisual[] = [];
   for (let i = 0; i < pallets; i++) {
-    const rec = sum.records[i % sum.records.length];
+    const rec = (tarimas.length ? sum.records.find((r) => r.ref === tarimas[i]) : undefined) ?? sum.records[i % sum.records.length];
     const kind = loc.crate ? 'cajon' : kindFor(rec.partNumber, loc.level);
     const px = pallets === 1 ? x : x + (i === 0 ? 0.57 : -0.57);
     if (kind === 'cajon') {

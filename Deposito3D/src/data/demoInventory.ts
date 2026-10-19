@@ -95,7 +95,13 @@ export function buildDemoInventory(wh: Warehouse): Inventory {
   for (const loc of wh.locations) {
     if (rnd() > 0.72) continue;
     const n = rnd() < 0.78 ? 1 : rnd() < 0.85 ? 2 : 3;
-    for (let i = 0; i < n; i++) records.push(makeRecord(loc.code, pick(weighted)));
+    for (let i = 0; i < n; i++) {
+      const rec = makeRecord(loc.code, pick(weighted));
+      // A veces una misma tarima lleva varias piezas (pallet mixto).
+      const prev = records[records.length - 1];
+      if (i > 0 && tarima % 3 === 0 && prev?.location === loc.code) rec.ref = prev.ref;
+      records.push(rec);
+    }
   }
   const zoneFill: Record<string, number> = { W0WIP: 12, REC: 9, EXP: 6, F1: 2, L1: 3, Q1: 2 };
   for (const z of wh.zones) {

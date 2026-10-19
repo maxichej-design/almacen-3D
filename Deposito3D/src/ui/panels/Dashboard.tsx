@@ -6,6 +6,7 @@ import { ABC_COLORS, ABC_LABEL, AGE_COLORS, COUNT_COLORS, COUNT_ICON, COUNT_LABE
 import { useStore } from '../../state/store';
 import { BarList, Stat } from '../Charts';
 import { fmtNum, fmtPct } from '../format';
+import { occupancy } from '../../domain/occupancy';
 
 /** Tablero con los indicadores principales del almacén. */
 export function Dashboard() {
@@ -42,6 +43,9 @@ export function Dashboard() {
   }, [wh, index, inventory]);
 
   const total = wh.locations.length;
+  const occ = useMemo(() => occupancy(wh, index), [wh, index]);
+  const setView = useStore((s) => s.setView);
+  const rowIds = [...occ.byRow.keys()].sort();
   const goMode = (m: Parameters<typeof setMode>[0]) => () => setMode(m);
 
   return (
@@ -49,8 +53,78 @@ export function Dashboard() {
       <p className="source">
         Fuente: <b>{inventory.label}</b> · {formatDate(inventory.loadedAt)}
       </p>
+      {/* Lo principal: cuántas ubicaciones hay disponibles y cuántas se usan. */}
+      <section className="occ-hero">
+        <div className="occ-main">
+          <div>
+            <div className="occ-label">Ubicaciones disponibles</div>
+            <div className="occ-value">{fmtNum(occ.all.free)}</div>
+            <div className="occ-hint">
+              de {fmtNum(total)} · <b>{fmtNum(occ.all.used)}</b> en uso ({fmtPct(occ.all.used / total)})
+              {occ.all.reserved > 0 && <> · {occ.all.reserved} reservadas A2.QC</>}
+            </div>
+          </div>
+          <button
+            className="occ-btn"
+            onClick={() => {
+              setMode('ocupacion');
+              setView('general');
+            }}
+            title="En la vista 'Realista' las ubicaciones libres se marcan en verde"
+          >
+            Ver libres en el 3D
+          </button>
+        </div>
+        <div className="occ-bar" aria-hidden>
+          <span className="used" style={{ width: `${(occ.all.used / total) * 100}%` }} />
+          <span className="free" style={{ width: `${(occ.all.free / total) * 100}%` }} />
+          <span className="res" style={{ width: `${(occ.all.reserved / total) * 100}%` }} />
+        </div>
+        <div className="occ-legend">
+          <span><i className="used" /> En uso</span>
+          <span><i className="free" /> Disponibles</span>
+          {occ.all.reserved > 0 && <span><i className="res" /> Reservadas</span>}
+        </div>
+      </section>
+
+      <section>
+        <h3>Disponibles por fila</h3>
+        <table className="table occ-table">
+          <thead>
+            <tr><th>Fila</th><th className="num">Libres</th><th className="num">En uso</th><th className="num">Total</th><th /></tr>
+          </thead>
+          <tbody>
+            {rowIds.map((id) => {
+              const c = occ.byRow.get(id)!;
+              return (
+                <tr key={id} onClick={() => select({ kind: 'row', id }, { fly: true })} title={`Ver fila ${id}`}>
+                  <td className="code">{id}</td>
+                  <td className="num free-n">{c.free}</td>
+                  <td className="num">{c.used}</td>
+                  <td className="num">{c.total}</td>
+                  <td className="mini-bar"><span style={{ width: `${(c.used / c.total) * 100}%` }} /></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h3>Disponibles por nivel</h3>
+        <p className="muted small">Nivel 1 = piso. Sirve para saber a qué altura hay lugar.</p>
+        <BarList
+          unit="libres"
+          data={[...occ.byLevel.keys()].sort().map((lv) => ({
+            label: lv === 1 ? 'Nivel 1 (piso)' : `Nivel ${lv}`,
+            value: occ.byLevel.get(lv)!.free,
+            color: '#16a34a',
+            tip: `Nivel ${lv}: ${occ.byLevel.get(lv)!.free} libres de ${occ.byLevel.get(lv)!.total}`,
+          }))}
+        />
+      </section>
+
       <div className="stats">
-        <Stat label="Ocupación estanterías" value={fmtPct(k.occupied / total)} hint={`${k.occupied} de ${total} ubicaciones`} />
         <Stat label="Números de parte" value={fmtNum(index.byPart.size)} hint={`${fmtNum(inventory.records.length)} registros`} />
         <Stat
           label="Conteos vencidos"
@@ -93,21 +167,6 @@ export function Dashboard() {
         <BarList
           unit="ubicaciones"
           data={AGE_BUCKETS.map((b, i) => ({ label: b.label, value: k.ages[i], color: AGE_COLORS[i], onClick: goMode('antiguedad') }))}
-        />
-      </section>
-
-      <section>
-        <h3>Ocupación por fila</h3>
-        <BarList
-          max={100}
-          data={k.rows.map((r) => ({
-            label: `Fila ${r.id}`,
-            value: Math.round(r.pct * 100),
-            color: '#2a78d6',
-            tip: `Fila ${r.id}: ${r.occ} ubicaciones ocupadas (${fmtPct(r.pct)})`,
-            onClick: () => select({ kind: 'row', id: r.id }, { fly: true }),
-          }))}
-          unit="%"
         />
       </section>
 

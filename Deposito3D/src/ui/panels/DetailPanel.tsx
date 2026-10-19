@@ -47,7 +47,7 @@ function QadLocDetail({ code }: { code: string }) {
       </dl>
       {records?.length ? (
         <>
-          <h3>Contenido ({records.length})</h3>
+          <h3>Contenido · {tarimaCount(records)}</h3>
           <RecordList records={records} />
         </>
       ) : (
@@ -55,6 +55,13 @@ function QadLocDetail({ code }: { code: string }) {
       )}
     </div>
   );
+}
+
+/** "2 tarimas · 3 piezas" */
+function tarimaCount(records: { ref?: string; partNumber: string }[]) {
+  const t = new Set(records.map((r) => r.ref ?? `sin-${r.partNumber}`)).size;
+  const p = new Set(records.map((r) => r.partNumber)).size;
+  return `${t} ${t === 1 ? 'tarima' : 'tarimas'} · ${p} ${p === 1 ? 'pieza' : 'piezas'}`;
 }
 
 function Empty() {
@@ -151,7 +158,7 @@ function LocationDetail({ code }: { code: string }) {
 
       {summary && (
         <>
-          <h3>Contenido ({summary.records.length})</h3>
+          <h3>Contenido · {tarimaCount(summary.records)}</h3>
           <RecordList records={summary.records} />
           <div className="actions">
             <button onClick={() => registerCount(code)} title="Registra en esta PC que la ubicación se contó hoy">
